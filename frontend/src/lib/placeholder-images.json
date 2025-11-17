@@ -1,0 +1,124 @@
+{
+  "placeholderImages": [
+    {
+      "id": "content_1",
+      "description": "A person coding on a laptop with React logos",
+      "imageUrl": "https://images.unsplash.com/photo-1633356122544-f134324a6cee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxSZWFjdCUyMGNvZGV8ZW58MHx8fHwxNzYzMTI5MDAzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "React code"
+    },
+    {
+      "id": "content_2",
+      "description": "A screen showing CSS code",
+      "imageUrl": "https://images.unsplash.com/photo-1504639725590-34d0984388bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxDU1MlMjBjb2RlfGVufDB8fHx8MTc2MzEyOTAzM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "CSS code"
+    },
+    {
+      "id": "content_3",
+      "description": "A group of people collaborating around a table",
+      "imageUrl": "https://images.unsplash.com/photo-1543269865-cbf427effbad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dGVhbSUyMGNvbGxhYm9yYXRpb258ZW58MHx8fHwxNzYzMDk3ODE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "team collaboration"
+    },
+    {
+      "id": "content_4",
+      "description": "JavaScript code on a dark screen",
+      "imageUrl": "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxKYXZhU2NyaXB0JTIwY29kZXxlbnwwfHx8fDE3NjMxMjkwODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "JavaScript code"
+    },
+    {
+      "id": "content_5",
+      "description": "Python code with data structures theme",
+      "imageUrl": "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxQeXRob24lMjBkYXRhfGVufDB8fHx8MTc2MzEyOTEyNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Python data"
+    },
+    {
+      "id": "content_6",
+      "description": "A server room representing a REST API backend",
+      "imageUrl": "https://images.unsplash.com/photo-1580894742597-87bc8789db3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxub2RlJmpzJTIwYmFja2VuZHxlbnwwfHx8fDE3NjMxMjkxODN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "nodejs backend"
+    },
+    {
+      "id": "course_java",
+      "description": "Developer at a computer with Java code and architecture diagrams, representing a full stack course.",
+      "imageUrl": "https://images.pexels.com/photos/1181298/pexels-photo-1181298.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "Java development"
+    },
+    {
+      "id": "course_python",
+      "description": "Python code on a screen with web framework logos, illustrating a full stack Python course.",
+      "imageUrl": "https://images.pexels.com/photos/1181414/pexels-photo-1181414.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "Python web"
+    },
+    {
+      "id": "course_analytics",
+      "description": "Data visualization charts and graphs on a modern dashboard, for a data analytics course.",
+      "imageUrl": "https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "data analytics"
+    },
+    {
+      "id": "course_devops",
+      "description": "An illustration of a CI/CD pipeline with AWS logos, for a DevOps course.",
+      "imageUrl": "https://images.pexels.com/photos/326518/pexels-photo-326518.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "DevOps pipeline"
+    },
+    {
+      "id": "course_mern",
+      "description": "Logos of MongoDB, Express, React, and Node.js on a developer's screen.",
+      "imageUrl": "https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "MERN stack"
+    },
+    {
+      "id": "course_datascience_genai",
+      "description": "An abstract visualization of a neural network and data points, representing Data Science and Gen AI.",
+      "imageUrl": "https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "AI data"
+    },
+    {
+      "id": "payment_gateway",
+      "description": "A secure online payment graphic with credit cards and a lock icon.",
+      "imageUrl": "https://images.pexels.com/photos/6694543/pexels-photo-6694543.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "secure payment"
+    },
+    {
+      "id": "order_confirmation",
+      "description": "A friendly illustration of a successful transaction with a checkmark.",
+      "imageUrl": "https://images.pexels.com/photos/7567434/pexels-photo-7567434.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+      "imageHint": "successful transaction"
+    },
+    {
+      "id": "login_student",
+      "description": "Group of students learning",
+      "imageUrl": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzdHVkZW50JTIwZ3JvdXB8ZW58MHx8fHwxNzYzMTMwMTI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student group"
+    },
+    {
+      "id": "login_tutor",
+      "description": "A friendly tutor mentoring",
+      "imageUrl": "https://images.unsplash.com/photo-1557862921-37829c790f19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx0ZWFjaGVyJTIwbWVudG9yfGVufDB8fHx8MTc2MzEzMDE5OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "teacher mentor"
+    },
+    {
+      "id": "login_admin",
+      "description": "System administrator illustration",
+      "imageUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "system administrator"
+    },
+    {
+      "id": "register_student",
+      "description": "Students celebrating graduation",
+      "imageUrl": "https://images.unsplash.com/photo-1531482615713-2c65799b4c6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzdHVkZW50JTIwcmVnaXN0cmF0aW9ufGVufDB8fHx8MTc2MzEzMDI4OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student graduation"
+    },
+    {
+      "id": "register_tutor",
+      "description": "A tutor helping a student",
+      "imageUrl": "https://images.unsplash.com/photo-1516549655169-df83a0877851?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx0ZWFjaGVyJTIwZ3VpZGFuY2V8ZW58MHx8fHwxNzYzMTMwMTY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tutor student"
+    },
+    {
+      "id": "forgot_password",
+      "description": "An illustration of a key and lock",
+      "imageUrl": "https://images.unsplash.com/photo-1584824486509-112e4181ff6b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsZWdhbCUyMGRvY3VtZW50fGVufDB8fHx8MTc2MzEzMDI4M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "key lock"
+    }
+  ]
+}
