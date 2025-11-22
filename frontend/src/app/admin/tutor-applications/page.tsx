@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AuthAvatar from "@/components/layout/auth-avatar";
 import { Check, X, GraduationCap } from "lucide-react";
 
 const applications = [
@@ -39,8 +40,10 @@ export default function AdminTutorAppsPage() {
             <Card key={app.id}>
                 <CardHeader className="flex flex-row items-start gap-4">
                      <Avatar className="h-16 w-16">
-                        <AvatarImage src={app.avatar} alt={app.name} />
-                        <AvatarFallback>{app.name.charAt(0)}</AvatarFallback>
+                        <>
+                          <AuthAvatar src={app.avatar} alt={app.name} />
+                          <AvatarFallback>{app.name.charAt(0)}</AvatarFallback>
+                        </>
                     </Avatar>
                     <div>
                         <CardTitle className="font-headline text-xl">{app.name}</CardTitle>

@@ -22,8 +22,7 @@ const navLinks = [
   { href: '/tutor/content', label: 'Content', icon: BookCopy },
   { href: '/tutor/tests', label: 'Tests', icon: PenSquare },
   { href: '/tutor/sessions', label: 'Sessions', icon: Calendar },
-  { href: '/tutor/forum', label: 'Forum', icon: MessageSquare },
-  { href: '/tutor/messages', label: 'Messages', icon: MessageSquare },
+  
 ]
 
 export function TutorSidebar() {

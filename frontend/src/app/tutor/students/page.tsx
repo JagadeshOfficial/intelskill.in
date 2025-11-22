@@ -1,5 +1,6 @@
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AuthAvatar from "@/components/layout/auth-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -55,8 +56,10 @@ export default function TutorStudentsPage() {
                                 <TableCell>
                                     <div className="flex items-center gap-3">
                                         <Avatar>
-                                            <AvatarImage src={student.avatar} alt={student.name} />
-                                            <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                                            <>
+                                              <AuthAvatar src={student.avatar} alt={student.name} />
+                                              <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                                            </>
                                         </Avatar>
                                         <span className="font-medium">{student.name}</span>
                                     </div>

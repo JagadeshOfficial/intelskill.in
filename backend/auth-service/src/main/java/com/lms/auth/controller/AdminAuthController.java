@@ -1,4 +1,5 @@
 package com.lms.auth.controller;
+import com.lms.auth.service.NotificationService;
 
 import com.lms.auth.dto.AdminLoginRequest;
 import com.lms.auth.dto.AdminLoginResponse;
@@ -8,9 +9,12 @@ import com.lms.auth.entity.Admin;
 import com.lms.auth.service.AdminAuthService;
 import com.lms.auth.service.JwtTokenProvider;
 import com.lms.auth.service.FileStorageService;
+import com.lms.auth.service.TutorService;
+import com.lms.auth.service.StudentService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,12 +31,47 @@ public class AdminAuthController {
     private final AdminAuthService adminAuthService;
     private final JwtTokenProvider jwtTokenProvider;
     private final FileStorageService fileStorageService;
+    private final TutorService tutorService;
+    private final StudentService studentService;
 
-    public AdminAuthController(AdminAuthService adminAuthService, JwtTokenProvider jwtTokenProvider, FileStorageService fileStorageService) {
+    @Autowired
+    private NotificationService notificationService;
+
+    public AdminAuthController(AdminAuthService adminAuthService, JwtTokenProvider jwtTokenProvider, FileStorageService fileStorageService, TutorService tutorService, StudentService studentService, NotificationService notificationService) {
         this.adminAuthService = adminAuthService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.fileStorageService = fileStorageService;
+        this.tutorService = tutorService;
+        this.studentService = studentService;
+        this.notificationService = notificationService;
     }
+        /**
+         * Get recent notifications (tutor registrations)
+         * GET /api/v1/auth/admin/notifications
+         */
+        @GetMapping("/notifications")
+        public ResponseEntity<?> getNotifications() {
+            return ResponseEntity.ok(notificationService.getRecentNotifications());
+        }
+
+        /**
+         * Accept/reject tutor registration notification
+         * PUT /api/v1/auth/admin/notifications/{id}/action
+         * Body: { "action": "ACCEPT" | "REJECT" }
+         */
+        @PutMapping("/notifications/{id}/action")
+        public ResponseEntity<?> handleNotificationAction(@PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+            String action = body.get("action");
+            if (action == null || action.isEmpty()) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", "Action is required"));
+            }
+            try {
+                var n = notificationService.handleTutorAction(id, action);
+                return ResponseEntity.ok(n);
+            } catch (Exception e) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            }
+        }
     
     /**
      * Admin login endpoint
@@ -99,6 +138,224 @@ public class AdminAuthController {
         result.put("total", adminList.size());
         result.put("admins", adminList);
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Get list of all tutors for admin view
+     * GET /api/v1/auth/admin/tutors
+     */
+    @GetMapping("/tutors")
+    public ResponseEntity<?> getAllTutors() {
+        var tutors = tutorService.getAllTutors();
+        var tutorList = tutors.stream().map(tutor -> {
+            var map = new java.util.HashMap<String, Object>();
+            map.put("id", tutor.getId());
+            map.put("email", tutor.getEmail());
+            map.put("firstName", tutor.getFirstName());
+            map.put("lastName", tutor.getLastName());
+            map.put("mobileNumber", tutor.getPhoneNumber());
+            map.put("expertise", tutor.getExpertise());
+            map.put("bio", tutor.getBio());
+            map.put("qualification", tutor.getQualification());
+            map.put("experience", tutor.getExperience());
+            map.put("hourlyRate", tutor.getHourlyRate());
+            map.put("photoUrl", tutor.getPhotoUrl());
+            map.put("status", tutor.getStatus());
+            map.put("verified", tutor.getVerified());
+            map.put("createdAt", convertDateTimeToArray(tutor.getCreatedAt()));
+            map.put("updatedAt", convertDateTimeToArray(tutor.getUpdatedAt()));
+            map.put("lastLogin", convertDateTimeToArray(tutor.getLastLogin()));
+            return map;
+        }).toList();
+
+        var result = new java.util.HashMap<String, Object>();
+        result.put("total", tutorList.size());
+        result.put("tutors", tutorList);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Get all students for admin view
+     * GET /api/v1/auth/admin/students
+     */
+    @GetMapping("/students")
+    public ResponseEntity<?> getAllStudents() {
+        var students = studentService.getAllStudents();
+        var studentList = students.stream().map(s -> {
+            var map = new java.util.HashMap<String, Object>();
+            map.put("id", s.getId());
+            map.put("email", s.getEmail());
+            map.put("firstName", s.getFirstName());
+            map.put("lastName", s.getLastName());
+            map.put("mobileNumber", s.getPhoneNumber());
+            map.put("photoUrl", s.getPhotoUrl());
+            map.put("status", s.getStatus());
+            map.put("verified", s.getVerified());
+            map.put("createdAt", convertDateTimeToArray(s.getCreatedAt()));
+            map.put("updatedAt", convertDateTimeToArray(s.getUpdatedAt()));
+            map.put("lastLogin", convertDateTimeToArray(s.getLastLogin()));
+            return map;
+        }).toList();
+
+        var result = new java.util.HashMap<String, Object>();
+        result.put("total", studentList.size());
+        result.put("students", studentList);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Get student by id for admin
+     */
+    @GetMapping("/students/{id}")
+    public ResponseEntity<?> getStudentById(@PathVariable Integer id) {
+        var opt = studentService.getStudentById(id);
+        if (opt.isPresent()) {
+            var s = opt.get();
+            var body = new java.util.HashMap<String, Object>();
+            body.put("id", s.getId());
+            body.put("email", s.getEmail());
+            body.put("firstName", s.getFirstName());
+            body.put("lastName", s.getLastName());
+            body.put("mobileNumber", s.getPhoneNumber());
+            body.put("photoUrl", s.getPhotoUrl());
+            body.put("status", s.getStatus());
+            body.put("verified", s.getVerified());
+            body.put("createdAt", convertDateTimeToArray(s.getCreatedAt()));
+            body.put("updatedAt", convertDateTimeToArray(s.getUpdatedAt()));
+            body.put("lastLogin", convertDateTimeToArray(s.getLastLogin()));
+            return ResponseEntity.ok(body);
+        }
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(java.util.Map.of("success", false, "message", "Student not found"));
+    }
+
+    /**
+     * Update student status
+     * PUT /api/v1/auth/admin/students/{id}/status
+     */
+    @PutMapping("/students/{id}/status")
+    public ResponseEntity<?> updateStudentStatus(@PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        String status = body.get("status");
+        if (status == null || status.isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", "Status is required"));
+        }
+        try {
+            var updated = studentService.updateStudentStatus(id, status);
+            return ResponseEntity.ok(java.util.Map.of("success", true, "message", "Status updated", "studentId", updated.getId(), "status", updated.getStatus()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Delete a student
+     */
+    @DeleteMapping("/students/{id}")
+    public ResponseEntity<?> deleteStudent(@PathVariable Integer id) {
+        try {
+            studentService.deleteStudent(id);
+            return ResponseEntity.ok(java.util.Map.of("success", true, "message", "Student deleted"));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Create student as admin
+     */
+    @PostMapping("/students")
+    public ResponseEntity<?> createStudentAsAdmin(@RequestBody java.util.Map<String, Object> body) {
+        try {
+            var s = studentService.createStudentAsAdmin(body);
+            var resp = new java.util.HashMap<String, Object>();
+            resp.put("id", s.getId());
+            resp.put("email", s.getEmail());
+            resp.put("firstName", s.getFirstName());
+            resp.put("lastName", s.getLastName());
+            resp.put("status", s.getStatus());
+            resp.put("success", true);
+            resp.put("message", "Student created");
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(resp);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get tutor details by id for admin
+     * GET /api/v1/auth/admin/tutors/{id}
+     */
+    @GetMapping("/tutors/{id}")
+    public ResponseEntity<?> getTutorById(@PathVariable Integer id) {
+        var opt = tutorService.getTutorById(id);
+        if (opt.isPresent()) {
+            var tutor = opt.get();
+            var body = new java.util.HashMap<String, Object>();
+            body.put("id", tutor.getId());
+            body.put("email", tutor.getEmail());
+            body.put("firstName", tutor.getFirstName());
+            body.put("lastName", tutor.getLastName());
+            body.put("mobileNumber", tutor.getPhoneNumber());
+            body.put("expertise", tutor.getExpertise());
+            body.put("bio", tutor.getBio());
+            body.put("qualification", tutor.getQualification());
+            body.put("experience", tutor.getExperience());
+            body.put("hourlyRate", tutor.getHourlyRate());
+            body.put("photoUrl", tutor.getPhotoUrl());
+            body.put("status", tutor.getStatus());
+            body.put("verified", tutor.getVerified());
+            body.put("createdAt", convertDateTimeToArray(tutor.getCreatedAt()));
+            body.put("updatedAt", convertDateTimeToArray(tutor.getUpdatedAt()));
+            body.put("lastLogin", convertDateTimeToArray(tutor.getLastLogin()));
+            return ResponseEntity.ok(body);
+        } else {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body("Tutor not found");
+        }
+    }
+
+    /**
+     * Update tutor status (approve/reject/suspend)
+     * PUT /api/v1/auth/admin/tutors/{id}/status
+     */
+    @PutMapping("/tutors/{id}/status")
+    public ResponseEntity<?> updateTutorStatus(@PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        String status = body.get("status");
+        if (status == null || status.isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", "Status is required"));
+        }
+        try {
+            var updated = tutorService.updateTutorStatus(id, status);
+            var resp = new java.util.HashMap<String, Object>();
+            resp.put("success", true);
+            resp.put("message", "Tutor status updated");
+            resp.put("tutorId", updated.getId());
+            resp.put("status", updated.getStatus());
+            return ResponseEntity.ok(resp);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Delete a tutor account
+     * DELETE /api/v1/auth/admin/tutors/{id}
+     */
+    @DeleteMapping("/tutors/{id}")
+    public ResponseEntity<?> deleteTutor(@PathVariable Integer id) {
+        try {
+            tutorService.deleteTutor(id);
+            return ResponseEntity.ok(java.util.Map.of("success", true, "message", "Tutor deleted successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(java.util.Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error deleting tutor: {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", "Failed to delete tutor"));
+        }
     }
 
     /**

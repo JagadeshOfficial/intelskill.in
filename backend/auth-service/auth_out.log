@@ -1,0 +1,223 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.1.5)
+
+2025-11-18T20:25:45.701+05:30  INFO 5676 --- [           main] com.lms.auth.AuthServiceApplication      : Starting AuthServiceApplication v1.0.0 using Java 24.0.1 with PID 5676 (C:\Users\jagad\OneDrive\Desktop\Jagadesh\Workspace\lms-project\backend\auth-service\target\auth-service-1.0.0.jar started by jagad in C:\Users\jagad\OneDrive\Desktop\Jagadesh\Workspace\lms-project\backend\auth-service)
+2025-11-18T20:25:45.702+05:30 DEBUG 5676 --- [           main] com.lms.auth.AuthServiceApplication      : Running with Spring Boot v3.1.5, Spring v6.0.13
+2025-11-18T20:25:45.705+05:30  INFO 5676 --- [           main] com.lms.auth.AuthServiceApplication      : No active profile set, falling back to 1 default profile: "default"
+2025-11-18T20:25:46.502+05:30  INFO 5676 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-11-18T20:25:46.583+05:30  INFO 5676 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 67 ms. Found 3 JPA repository interfaces.
+2025-11-18T20:25:48.654+05:30  INFO 5676 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8081 (http)
+2025-11-18T20:25:48.677+05:30  INFO 5676 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-11-18T20:25:48.678+05:30  INFO 5676 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.15]
+2025-11-18T20:25:48.874+05:30  INFO 5676 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-11-18T20:25:48.876+05:30  INFO 5676 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 3100 ms
+2025-11-18T20:25:49.486+05:30  INFO 5676 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-11-18T20:25:49.784+05:30  INFO 5676 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.2.13.Final
+2025-11-18T20:25:49.795+05:30  INFO 5676 --- [           main] org.hibernate.cfg.Environment            : HHH000406: Using bytecode reflection optimizer
+2025-11-18T20:25:51.071+05:30  INFO 5676 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-11-18T20:25:51.165+05:30  INFO 5676 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-11-18T20:25:51.698+05:30  INFO 5676 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@19f21b6b
+2025-11-18T20:25:51.704+05:30  INFO 5676 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-11-18T20:25:51.842+05:30  WARN 5676 --- [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-11-18T20:25:51.846+05:30  WARN 5676 --- [           main] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2025-11-18T20:25:53.997+05:30  INFO 5676 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-11-18T20:25:54.107+05:30  INFO 5676 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-11-18T20:25:55.189+05:30  INFO 5676 --- [           main] com.lms.auth.config.MailConfig           : Configuring mail sender with host: smtp.gmail.com, port: 587, username: jagadeswararaovana@gmail.com
+2025-11-18T20:25:55.190+05:30  INFO 5676 --- [           main] com.lms.auth.config.MailConfig           : Mail sender configured successfully
+2025-11-18T20:25:55.269+05:30  WARN 5676 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-11-18T20:25:55.308+05:30  WARN 5676 --- [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 1612770d-f8b5-4323-8689-1e6b46fa3559
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2025-11-18T20:25:55.657+05:30  INFO 5676 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4d6ccc97, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6a12c7a8, org.springframework.security.web.context.SecurityContextHolderFilter@36aa52d2, org.springframework.security.web.header.HeaderWriterFilter@3679d92e, org.springframework.web.filter.CorsFilter@161aa04a, org.springframework.security.web.authentication.logout.LogoutFilter@2db4ad1, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@16a35bd, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6f798482, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@436bd4df, org.springframework.security.web.access.ExceptionTranslationFilter@6cbe7d4d, org.springframework.security.web.access.intercept.AuthorizationFilter@1fc713c9]
+2025-11-18T20:25:56.417+05:30  INFO 5676 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8081 (http) with context path ''
+2025-11-18T20:25:56.465+05:30  INFO 5676 --- [           main] com.lms.auth.AuthServiceApplication      : Started AuthServiceApplication in 11.451 seconds (process running for 12.23)
+2025-11-18T20:26:15.249+05:30  INFO 5676 --- [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-18T20:26:15.250+05:30  INFO 5676 --- [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-11-18T20:26:15.251+05:30  INFO 5676 --- [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2025-11-18T20:26:15.727+05:30  INFO 5676 --- [nio-8081-exec-1] com.lms.auth.service.EmailService        : Sending OTP to email: jagadeswararaovana@gmail.com
+DEBUG: Jakarta Mail version 2.1.1
+DEBUG: URL jar:file:/C:/Users/jagad/OneDrive/Desktop/Jagadesh/Workspace/lms-project/backend/auth-service/target/auth-service-1.0.0.jar!/BOOT-INF/lib/jakarta.mail-1.1.0.jar!/META-INF/javamail.providers
+DEBUG: successfully loaded resource: jar:file:/C:/Users/jagad/OneDrive/Desktop/Jagadesh/Workspace/lms-project/backend/auth-service/target/auth-service-1.0.0.jar!/BOOT-INF/lib/jakarta.mail-1.1.0.jar!/META-INF/javamail.providers
+DEBUG: successfully loaded resource: /META-INF/javamail.default.providers
+DEBUG: Tables of loaded providers
+DEBUG: Providers Listed By Class Name: {com.sun.mail.smtp.SMTPTransport=jakarta.mail.Provider[TRANSPORT,smtp,com.sun.mail.smtp.SMTPTransport,Oracle], com.sun.mail.pop3.POP3Store=jakarta.mail.Provider[STORE,pop3,com.sun.mail.pop3.POP3Store,Oracle], com.sun.mail.imap.IMAPSSLStore=jakarta.mail.Provider[STORE,imaps,com.sun.mail.imap.IMAPSSLStore,Oracle], com.sun.mail.smtp.SMTPSSLTransport=jakarta.mail.Provider[TRANSPORT,smtps,com.sun.mail.smtp.SMTPSSLTransport,Oracle], com.sun.mail.pop3.POP3SSLStore=jakarta.mail.Provider[STORE,pop3s,com.sun.mail.pop3.POP3SSLStore,Oracle], com.sun.mail.imap.IMAPStore=jakarta.mail.Provider[STORE,imap,com.sun.mail.imap.IMAPStore,Oracle]}
+DEBUG: Providers Listed By Protocol: {imap=jakarta.mail.Provider[STORE,imap,com.sun.mail.imap.IMAPStore,Oracle], smtp=jakarta.mail.Provider[TRANSPORT,smtp,com.sun.mail.smtp.SMTPTransport,Oracle], pop3=jakarta.mail.Provider[STORE,pop3,com.sun.mail.pop3.POP3Store,Oracle], imaps=jakarta.mail.Provider[STORE,imaps,com.sun.mail.imap.IMAPSSLStore,Oracle], smtps=jakarta.mail.Provider[TRANSPORT,smtps,com.sun.mail.smtp.SMTPSSLTransport,Oracle], pop3s=jakarta.mail.Provider[STORE,pop3s,com.sun.mail.pop3.POP3SSLStore,Oracle]}
+DEBUG: successfully loaded resource: /META-INF/javamail.default.address.map
+DEBUG: URL jar:file:/C:/Users/jagad/OneDrive/Desktop/Jagadesh/Workspace/lms-project/backend/auth-service/target/auth-service-1.0.0.jar!/BOOT-INF/lib/jakarta.mail-1.1.0.jar!/META-INF/javamail.address.map
+DEBUG: successfully loaded resource: jar:file:/C:/Users/jagad/OneDrive/Desktop/Jagadesh/Workspace/lms-project/backend/auth-service/target/auth-service-1.0.0.jar!/BOOT-INF/lib/jakarta.mail-1.1.0.jar!/META-INF/javamail.address.map
+DEBUG: getProvider() returning jakarta.mail.Provider[TRANSPORT,smtp,com.sun.mail.smtp.SMTPTransport,Oracle]
+DEBUG SMTP: useEhlo true, useAuth true
+DEBUG SMTP: trying to connect to host "smtp.gmail.com", port 587, isSSL false
+220 smtp.gmail.com ESMTP d9443c01a7336-2985c2bf172sm176912815ad.83 - gsmtp
+DEBUG SMTP: connected to host "smtp.gmail.com", port: 587
+EHLO DESKTOP-C3QNC2D
+250-smtp.gmail.com at your service, [103.160.27.120]
+250-SIZE 35882577
+250-8BITMIME
+250-STARTTLS
+250-ENHANCEDSTATUSCODES
+250-PIPELINING
+250-CHUNKING
+250 SMTPUTF8
+DEBUG SMTP: Found extension "SIZE", arg "35882577"
+DEBUG SMTP: Found extension "8BITMIME", arg ""
+DEBUG SMTP: Found extension "STARTTLS", arg ""
+DEBUG SMTP: Found extension "ENHANCEDSTATUSCODES", arg ""
+DEBUG SMTP: Found extension "PIPELINING", arg ""
+DEBUG SMTP: Found extension "CHUNKING", arg ""
+DEBUG SMTP: Found extension "SMTPUTF8", arg ""
+STARTTLS
+220 2.0.0 Ready to start TLS
+EHLO DESKTOP-C3QNC2D
+250-smtp.gmail.com at your service, [103.160.27.120]
+250-SIZE 35882577
+250-8BITMIME
+250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH
+250-ENHANCEDSTATUSCODES
+250-PIPELINING
+250-CHUNKING
+250 SMTPUTF8
+DEBUG SMTP: Found extension "SIZE", arg "35882577"
+DEBUG SMTP: Found extension "8BITMIME", arg ""
+DEBUG SMTP: Found extension "AUTH", arg "LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH"
+DEBUG SMTP: Found extension "ENHANCEDSTATUSCODES", arg ""
+DEBUG SMTP: Found extension "PIPELINING", arg ""
+DEBUG SMTP: Found extension "CHUNKING", arg ""
+DEBUG SMTP: Found extension "SMTPUTF8", arg ""
+DEBUG SMTP: protocolConnect login, host=smtp.gmail.com, user=jagadeswararaovana@gmail.com, password=<non-null>
+DEBUG SMTP: Attempt to authenticate using mechanisms: LOGIN PLAIN DIGEST-MD5 NTLM XOAUTH2 
+DEBUG SMTP: Using mechanism LOGIN
+AUTH LOGIN
+334 VXNlcm5hbWU6
+amFnYWRlc3dhcmFyYW92YW5hQGdtYWlsLmNvbQ==
+334 UGFzc3dvcmQ6
+bWR1emxsYWF2bmR4dml5Zg==
+235 2.7.0 Accepted
+DEBUG SMTP: use8bit false
+MAIL FROM:<jagadeswararaovana@gmail.com>
+250 2.1.0 OK d9443c01a7336-2985c2bf172sm176912815ad.83 - gsmtp
+RCPT TO:<jagadeswararaovana@gmail.com>
+250 2.1.5 OK d9443c01a7336-2985c2bf172sm176912815ad.83 - gsmtp
+DEBUG SMTP: Verified Addresses
+DEBUG SMTP:   jagadeswararaovana@gmail.com
+DATA
+354 Go ahead d9443c01a7336-2985c2bf172sm176912815ad.83 - gsmtp
+Date: Tue, 18 Nov 2025 20:26:18 +0530 (IST)
+From: jagadeswararaovana@gmail.com
+To: jagadeswararaovana@gmail.com
+Message-ID: <528985781.0.1763477779018@DESKTOP-C3QNC2D>
+Subject: LearnFlow - Email Verification OTP
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Your OTP for email verification is: 460186
+
+This OTP is valid for 5 minutes only.
+
+Do not share this OTP with anyone.
+.
+250 2.0.0 OK  1763477780 d9443c01a7336-2985c2bf172sm176912815ad.83 - gsmtp
+DEBUG SMTP: message successfully delivered to mail server
+QUIT
+221 2.0.0 closing connection d9443c01a7336-2985c2bf172sm176912815ad.83 - gsmtp
+2025-11-18T20:26:21.202+05:30  INFO 5676 --- [nio-8081-exec-1] com.lms.auth.service.EmailService        : OTP sent successfully to email: jagadeswararaovana@gmail.com
+2025-11-18T20:27:41.000+05:30  INFO 5676 --- [nio-8081-exec-4] com.lms.auth.service.EmailService        : Sending OTP to email: jagguma9573@gmail.com
+DEBUG: getProvider() returning jakarta.mail.Provider[TRANSPORT,smtp,com.sun.mail.smtp.SMTPTransport,Oracle]
+DEBUG SMTP: useEhlo true, useAuth true
+DEBUG SMTP: trying to connect to host "smtp.gmail.com", port 587, isSSL false
+220 smtp.gmail.com ESMTP 98e67ed59e1d1-343e07ba2a4sm22183218a91.15 - gsmtp
+DEBUG SMTP: connected to host "smtp.gmail.com", port: 587
+EHLO DESKTOP-C3QNC2D
+250-smtp.gmail.com at your service, [103.160.27.120]
+250-SIZE 35882577
+250-8BITMIME
+250-STARTTLS
+250-ENHANCEDSTATUSCODES
+250-PIPELINING
+250-CHUNKING
+250 SMTPUTF8
+DEBUG SMTP: Found extension "SIZE", arg "35882577"
+DEBUG SMTP: Found extension "8BITMIME", arg ""
+DEBUG SMTP: Found extension "STARTTLS", arg ""
+DEBUG SMTP: Found extension "ENHANCEDSTATUSCODES", arg ""
+DEBUG SMTP: Found extension "PIPELINING", arg ""
+DEBUG SMTP: Found extension "CHUNKING", arg ""
+DEBUG SMTP: Found extension "SMTPUTF8", arg ""
+STARTTLS
+220 2.0.0 Ready to start TLS
+EHLO DESKTOP-C3QNC2D
+250-smtp.gmail.com at your service, [103.160.27.120]
+250-SIZE 35882577
+250-8BITMIME
+250-AUTH LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH
+250-ENHANCEDSTATUSCODES
+250-PIPELINING
+250-CHUNKING
+250 SMTPUTF8
+DEBUG SMTP: Found extension "SIZE", arg "35882577"
+DEBUG SMTP: Found extension "8BITMIME", arg ""
+DEBUG SMTP: Found extension "AUTH", arg "LOGIN PLAIN XOAUTH2 PLAIN-CLIENTTOKEN OAUTHBEARER XOAUTH"
+DEBUG SMTP: Found extension "ENHANCEDSTATUSCODES", arg ""
+DEBUG SMTP: Found extension "PIPELINING", arg ""
+DEBUG SMTP: Found extension "CHUNKING", arg ""
+DEBUG SMTP: Found extension "SMTPUTF8", arg ""
+DEBUG SMTP: protocolConnect login, host=smtp.gmail.com, user=jagadeswararaovana@gmail.com, password=<non-null>
+DEBUG SMTP: Attempt to authenticate using mechanisms: LOGIN PLAIN DIGEST-MD5 NTLM XOAUTH2 
+DEBUG SMTP: Using mechanism LOGIN
+AUTH LOGIN
+334 VXNlcm5hbWU6
+amFnYWRlc3dhcmFyYW92YW5hQGdtYWlsLmNvbQ==
+334 UGFzc3dvcmQ6
+bWR1emxsYWF2bmR4dml5Zg==
+235 2.7.0 Accepted
+DEBUG SMTP: use8bit false
+MAIL FROM:<jagadeswararaovana@gmail.com>
+250 2.1.0 OK 98e67ed59e1d1-343e07ba2a4sm22183218a91.15 - gsmtp
+RCPT TO:<jagguma9573@gmail.com>
+250 2.1.5 OK 98e67ed59e1d1-343e07ba2a4sm22183218a91.15 - gsmtp
+DEBUG SMTP: Verified Addresses
+DEBUG SMTP:   jagguma9573@gmail.com
+DATA
+354 Go ahead 98e67ed59e1d1-343e07ba2a4sm22183218a91.15 - gsmtp
+Date: Tue, 18 Nov 2025 20:27:44 +0530 (IST)
+From: jagadeswararaovana@gmail.com
+To: jagguma9573@gmail.com
+Message-ID: <1018972787.1.1763477864630@DESKTOP-C3QNC2D>
+Subject: LearnFlow - Email Verification OTP
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Your OTP for email verification is: 898638
+
+This OTP is valid for 5 minutes only.
+
+Do not share this OTP with anyone.
+.
+250 2.0.0 OK  1763477866 98e67ed59e1d1-343e07ba2a4sm22183218a91.15 - gsmtp
+DEBUG SMTP: message successfully delivered to mail server
+QUIT
+221 2.0.0 closing connection 98e67ed59e1d1-343e07ba2a4sm22183218a91.15 - gsmtp
+2025-11-18T20:27:46.546+05:30  INFO 5676 --- [nio-8081-exec-4] com.lms.auth.service.EmailService        : OTP sent successfully to email: jagguma9573@gmail.com
+2025-11-18T23:31:19.330+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3h1m57s491ms563µs900ns).
+2025-11-19T02:43:18.140+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3h1m58s641ms621µs200ns).
+2025-11-19T05:55:15.401+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3h1m57s87ms492µs600ns).
+2025-11-19T08:01:26.506+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h56m10s920ms702µs100ns).
+2025-11-19T08:16:28.802+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=13m32s260ms417µs500ns).
+2025-11-19T08:59:06.342+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=33m7s450ms76µs500ns).
+2025-11-19T09:13:01.851+05:30  WARN 5676 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3m55s338ms314µs400ns).
+2025-11-19T09:14:49.504+05:30  INFO 5676 --- [nio-8081-exec-2] c.l.auth.controller.AdminAuthController  : Admin login request received for email: jagadeswararaovana@gmail.com
+2025-11-19T09:14:49.507+05:30  INFO 5676 --- [nio-8081-exec-2] com.lms.auth.service.AdminAuthService    : Attempting admin login for email: jagadeswararaovana@gmail.com
+2025-11-19T09:14:50.540+05:30  INFO 5676 --- [nio-8081-exec-2] com.lms.auth.service.AdminAuthService    : Admin successfully logged in: jagadeswararaovana@gmail.com
+2025-11-19T09:14:53.356+05:30  INFO 5676 --- [nio-8081-exec-5] c.l.auth.controller.AdminAuthController  : Get image request for filename: admin_8_aca2138a-77ef-4415-a08c-fe74a2420a1b.jpg
+2025-11-19T09:14:53.390+05:30  INFO 5676 --- [nio-8081-exec-6] c.l.auth.controller.AdminAuthController  : Get image request for filename: admin_8_aca2138a-77ef-4415-a08c-fe74a2420a1b.jpg

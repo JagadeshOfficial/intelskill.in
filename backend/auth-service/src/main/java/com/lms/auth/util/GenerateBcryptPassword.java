@@ -1,3 +1,5 @@
+package com.lms.auth.util;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class GenerateBcryptPassword {

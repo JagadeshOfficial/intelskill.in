@@ -21,7 +21,6 @@ const navLinks = [
   { href: '/admin/tutors', label: 'Tutors', icon: UserCheck },
   { href: '/admin/admins', label: 'Admins', icon: UserCog },
   { href: '/admin/content', label: 'Content', icon: BookOpen },
-  { href: '/admin/forum', label: 'Forum', icon: MessageSquare },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
   { href: '/admin/tutor-applications', label: 'Tutor Apps', icon: ShieldCheck },
 ]

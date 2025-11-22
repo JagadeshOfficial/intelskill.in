@@ -1,7 +1,8 @@
 
 'use client'
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AuthAvatar from "@/components/layout/auth-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -521,16 +522,19 @@ export default function AdminAdminsPage() {
                 <div className="relative">
                   <Avatar className="h-20 w-20">
                     {editFormData.profileImagePreview ? (
-                      <AvatarImage src={editFormData.profileImagePreview} alt="Profile preview" />
+                        <>
+                          <AuthAvatar src={editFormData.profileImagePreview} alt="Profile preview" />
+                          <AvatarFallback>{(selectedAdmin.firstName?.[0] || 'A') + (selectedAdmin.lastName?.[0] || '')}</AvatarFallback>
+                        </>
                     ) : selectedAdmin.photoUrl ? (
                       <>
-                        <AvatarImage src={`${API_BASE_URL}/api/v1/auth/admin/image/${selectedAdmin.photoUrl}`} alt={`${selectedAdmin.firstName} ${selectedAdmin.lastName}`} />
-                        <AvatarFallback>{(selectedAdmin.firstName?.[0] || 'A') + (selectedAdmin.lastName?.[0] || '')}</AvatarFallback>
+                          <AuthAvatar photoKey={selectedAdmin.photoUrl} alt={`${selectedAdmin.firstName} ${selectedAdmin.lastName}`} />
+                          <AvatarFallback>{(selectedAdmin.firstName?.[0] || 'A') + (selectedAdmin.lastName?.[0] || '')}</AvatarFallback>
                       </>
                     ) : (
                       <>
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${selectedAdmin.email}`} alt={`${selectedAdmin.firstName} ${selectedAdmin.lastName}`} />
-                        <AvatarFallback>{(selectedAdmin.firstName?.[0] || 'A') + (selectedAdmin.lastName?.[0] || '')}</AvatarFallback>
+                          <AuthAvatar src={`https://i.pravatar.cc/150?u=${selectedAdmin.email}`} alt={`${selectedAdmin.firstName} ${selectedAdmin.lastName}`} />
+                          <AvatarFallback>{(selectedAdmin.firstName?.[0] || 'A') + (selectedAdmin.lastName?.[0] || '')}</AvatarFallback>
                       </>
                     )}
                   </Avatar>
@@ -715,12 +719,12 @@ export default function AdminAdminsPage() {
                                 <Avatar>
                                   {admin.photoUrl ? (
                                     <>
-                                      <AvatarImage src={`${API_BASE_URL}/api/v1/auth/admin/image/${admin.photoUrl}`} alt={`${admin.firstName} ${admin.lastName}`} />
+                                      <AuthAvatar photoKey={admin.photoUrl} alt={`${admin.firstName} ${admin.lastName}`} />
                                       <AvatarFallback>{(admin.firstName?.[0] || 'A') + (admin.lastName?.[0] || '')}</AvatarFallback>
                                     </>
                                   ) : (
                                     <>
-                                      <AvatarImage src={`https://i.pravatar.cc/150?u=${admin.email}`} alt={`${admin.firstName} ${admin.lastName}`} />
+                                      <AuthAvatar src={`https://i.pravatar.cc/150?u=${admin.email}`} alt={`${admin.firstName} ${admin.lastName}`} />
                                       <AvatarFallback>{(admin.firstName?.[0] || 'A') + (admin.lastName?.[0] || '')}</AvatarFallback>
                                     </>
                                   )}

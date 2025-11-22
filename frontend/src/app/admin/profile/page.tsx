@@ -2,7 +2,8 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AuthAvatar from "@/components/layout/auth-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -148,11 +149,16 @@ export default function AdminProfilePage() {
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
                         {profile.photoUrl ? (
-                            <AvatarImage src={`${API_BASE_URL}/api/v1/auth/admin/image/${profile.photoUrl}`} alt="User Avatar" />
+                            <>
+                              <AuthAvatar photoKey={profile.photoUrl} alt="User Avatar" />
+                              <AvatarFallback>U</AvatarFallback>
+                            </>
                         ) : (
-                            <AvatarImage src="https://picsum.photos/seed/learnflow-user/80/80" alt="User Avatar" />
+                            <>
+                              <AuthAvatar src="https://picsum.photos/seed/learnflow-user/80/80" alt="User Avatar" />
+                              <AvatarFallback>U</AvatarFallback>
+                            </>
                         )}
-                        <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <Button variant="outline">Change Picture</Button>
                 </div>

@@ -4,7 +4,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AuthAvatar from "@/components/layout/auth-avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Video, Mic, ScreenShare, PhoneOff, Send, Users, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -67,16 +68,20 @@ export default function LiveSessionPage({ params }: { params: { id: string } }) 
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src="https://i.pravatar.cc/150?u=t02" alt="Kenji Tanaka" />
-                                    <AvatarFallback>KT</AvatarFallback>
+                                    <>
+                                      <AuthAvatar src="https://i.pravatar.cc/150?u=t02" alt="Kenji Tanaka" />
+                                      <AvatarFallback>KT</AvatarFallback>
+                                    </>
                                 </Avatar>
                                 <p className="font-semibold text-sm">Kenji Tanaka (You)</p>
                             </div>
                             {participants.map(p => (
                                 <div key={p.name} className="flex items-center gap-3">
                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src={p.avatar} alt={p.name} />
-                                        <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+                                        <>
+                                          <AuthAvatar src={p.avatar} alt={p.name} />
+                                          <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
+                                        </>
                                     </Avatar>
                                     <p className="text-sm">{p.name}</p>
                                 </div>

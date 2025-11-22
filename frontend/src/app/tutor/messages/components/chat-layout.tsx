@@ -1,6 +1,7 @@
-'use client'
+"use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AuthAvatar from "@/components/layout/auth-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,10 +42,12 @@ export function ChatLayout({ conversations, messages, selectedConversation, onCo
                                 )}
                             >
                                 <div className="relative">
-                                    <Avatar>
-                                        <AvatarImage src={convo.avatar} alt={convo.name} />
-                                        <AvatarFallback>{convo.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
+                                                                        <Avatar>
+                                                                                <>
+                                                                                    <AuthAvatar src={convo.avatar} alt={convo.name} />
+                                                                                    <AvatarFallback>{convo.name.charAt(0)}</AvatarFallback>
+                                                                                </>
+                                                                        </Avatar>
                                     {convo.status === 'online' && (
                                         <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
                                     )}
@@ -66,10 +69,12 @@ export function ChatLayout({ conversations, messages, selectedConversation, onCo
                     {/* Header */}
                     <div className="p-4 border-b flex items-center gap-3">
                          <div className="relative">
-                             <Avatar>
-                                <AvatarImage src={selectedConversation.avatar} alt={selectedConversation.name} />
-                                <AvatarFallback>{selectedConversation.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                                                         <Avatar>
+                                                                <>
+                                                                    <AuthAvatar src={selectedConversation.avatar} alt={selectedConversation.name} />
+                                                                    <AvatarFallback>{selectedConversation.name.charAt(0)}</AvatarFallback>
+                                                                </>
+                                                        </Avatar>
                              {selectedConversation.status === 'online' && (
                                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
                             )}
@@ -83,10 +88,12 @@ export function ChatLayout({ conversations, messages, selectedConversation, onCo
                              <div key={msg.id} className={cn("flex", msg.authorId === currentUserId ? "justify-end" : "justify-start")}>
                                 <div className="flex items-end gap-2 max-w-md">
                                      {msg.authorId !== currentUserId && (
-                                         <Avatar className="h-8 w-8">
-                                            <AvatarImage src={msg.authorAvatar} alt={msg.authorName} />
-                                            <AvatarFallback>{msg.authorName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
+                                                                                 <Avatar className="h-8 w-8">
+                                                                                        <>
+                                                                                            <AuthAvatar src={msg.authorAvatar} alt={msg.authorName} />
+                                                                                            <AvatarFallback>{msg.authorName.charAt(0)}</AvatarFallback>
+                                                                                        </>
+                                                                                </Avatar>
                                      )}
                                      <div className={cn(
                                         "p-3 rounded-lg max-w-xs sm:max-w-md",
@@ -95,10 +102,12 @@ export function ChatLayout({ conversations, messages, selectedConversation, onCo
                                         <p className="text-sm">{msg.content}</p>
                                     </div>
                                      {msg.authorId === currentUserId && (
-                                         <Avatar className="h-8 w-8">
-                                            <AvatarImage src={msg.authorAvatar} alt={msg.authorName} />
-                                            <AvatarFallback>{msg.authorName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
+                                                                                 <Avatar className="h-8 w-8">
+                                                                                        <>
+                                                                                            <AuthAvatar src={msg.authorAvatar} alt={msg.authorName} />
+                                                                                            <AvatarFallback>{msg.authorName.charAt(0)}</AvatarFallback>
+                                                                                        </>
+                                                                                </Avatar>
                                      )}
                                 </div>
                             </div>

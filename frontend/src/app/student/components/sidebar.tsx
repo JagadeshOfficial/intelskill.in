@@ -18,10 +18,9 @@ const navLinks = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/student/content', label: 'Learning Materials', icon: BookCopy },
   { href: '/student/tests', label: 'Online Tests', icon: PenSquare },
-  { href: '/student/forum', label: 'Discussion Forums', icon: MessageSquare },
   { href: '/student/compiler', label: 'Practice', icon: Terminal },
   { href: '/student/sessions', label: 'Live Sessions', icon: Calendar },
-  { href: '/student/messages', label: 'Messages', icon: MessageSquare },
+  
 ]
 
 export function StudentSidebar() {

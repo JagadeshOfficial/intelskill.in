@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState } from "react";
@@ -20,17 +19,62 @@ interface UploadContentDialogProps {
 
 export function UploadContentDialog({ children, uploadType, courses, students }: UploadContentDialogProps) {
     const [open, setOpen] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const [courseId, setCourseId] = useState<string | null>(null);
     const [assignmentType, setAssignmentType] = useState('all');
+    const [studentId, setStudentId] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const handleUpload = () => {
-        // Simulate upload logic
-        toast({
-            title: "Upload Successful",
-            description: `Your ${uploadType.toLowerCase()} has been uploaded and assigned.`,
-        });
-        setOpen(false);
-    }
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFile(e.target.files?.[0] || null);
+    };
+
+    const handleUpload = async () => {
+        if (!file || !courseId) {
+            toast({
+                title: "Upload Failed",
+                description: "Please select a file and a course.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("courseId", courseId);
+        formData.append("assignmentType", assignmentType);
+        if (assignmentType === "specific" && studentId) {
+            formData.append("studentId", studentId);
+        }
+
+        try {
+            const response = await fetch("/api/v1/tutor/content/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Upload Successful",
+                    description: `Your ${uploadType.toLowerCase()} has been uploaded and assigned.`,
+                });
+                setOpen(false);
+            } else {
+                const error = await response.json();
+                toast({
+                    title: "Upload Failed",
+                    description: error.message || "An error occurred.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Upload Failed",
+                description: "An error occurred while uploading.",
+                variant: "destructive",
+            });
+        }
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -47,11 +91,11 @@ export function UploadContentDialog({ children, uploadType, courses, students }:
                 <div className="grid gap-4 py-4">
                     <div className="grid w-full max-w-sm items-center gap-1.5">
                         <Label htmlFor="file">File</Label>
-                        <Input id="file" type="file" />
+                        <Input id="file" type="file" onChange={handleFileChange} />
                     </div>
                     <div className="grid w-full max-w-sm items-center gap-1.5">
                         <Label htmlFor="course">Course</Label>
-                        <Select>
+                        <Select onValueChange={setCourseId}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a course" />
                             </SelectTrigger>
@@ -62,9 +106,9 @@ export function UploadContentDialog({ children, uploadType, courses, students }:
                             </SelectContent>
                         </Select>
                     </div>
-                     <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <div className="grid w-full max-w-sm items-center gap-1.5">
                         <Label>Assign To</Label>
-                         <RadioGroup defaultValue="all" onValueChange={setAssignmentType}>
+                        <RadioGroup defaultValue="all" onValueChange={setAssignmentType}>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="all" id="r1" />
                                 <Label htmlFor="r1">All Students in Course</Label>
@@ -76,9 +120,9 @@ export function UploadContentDialog({ children, uploadType, courses, students }:
                         </RadioGroup>
                     </div>
                     {assignmentType === 'specific' && (
-                         <div className="grid w-full max-w-sm items-center gap-1.5">
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
                             <Label htmlFor="student">Student</Label>
-                            <Select>
+                            <Select onValueChange={setStudentId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a student" />
                                 </SelectTrigger>
@@ -97,6 +141,6 @@ export function UploadContentDialog({ children, uploadType, courses, students }:
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
 

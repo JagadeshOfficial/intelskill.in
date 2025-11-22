@@ -34,8 +34,7 @@ public class AdminCreateRequest {
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.mobileNumber = mobileNumber;
-        this.photoUrl = photoUrl;
+        // mobileNumber and photoUrl are optional; not provided in this constructor
         this.role = role;
     }
 

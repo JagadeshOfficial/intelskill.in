@@ -20,6 +20,23 @@ spring:
   web:
     resources:
       static-locations: classpath:/static/, file:./uploads/
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:akshjavahub@gmail.com}
+    # Do NOT keep a real password in version control. Set MAIL_PASSWORD as an environment variable.
+    # The default fallback has been removed to force use of environment variables or a .env loader.
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 server:
   port: 8081
