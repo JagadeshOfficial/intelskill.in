@@ -6,6 +6,9 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StudentMultiSelect, StudentOption } from "@/components/ui/StudentMultiSelect";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogTrigger,
@@ -133,32 +136,15 @@ export default function AdminCoursesPage() {
 
   // Manage Batches Popup
   function ManageBatchesPopup({ onClose }: { onClose: () => void }) {
-        async function handleAddStudent() {
-          if (!studentEmail || !selectedBatchId || !selectedCourse) return;
-          try {
-            await import("@/lib/api-courses").then(({ addStudentToBatch }) =>
-              addStudentToBatch(selectedCourse.id, selectedBatchId, studentEmail)
-            );
-            setStudentEmail("");
-            // Optionally, refresh courses from backend here for up-to-date students
-            toast({ title: "Student added to batch!" });
-          } catch (err) {
-            toast({ title: "Failed to add student", description: String(err) });
-          }
-        }
-    const [selectedBatchId, setSelectedBatchId] = useState<string | number>(selectedCourse?.batches?.[0]?.id || "");
-    useEffect(() => {
-      // Reset selected students and search when batch changes
-      setSelectedStudentIds([]);
-      setSearchTerm("");
-      setSearchEmail("");
-    }, [selectedBatchId]);
-    const [studentEmail, setStudentEmail] = useState("");
-    const [searchEmail, setSearchEmail] = useState("");
-    const [allStudents, setAllStudents] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-    // Fetch all students from backend API when modal opens
+    const [selectedBatchId, setSelectedBatchId] = useState<string | number>(
+      selectedCourse?.batches?.[0]?.id || ""
+    );
+    const [currentSearch, setCurrentSearch] = useState("");
+    const [addSearch, setAddSearch] = useState("");
+    const [addStudentIds, setAddStudentIds] = useState<string[]>([]);
+    const [allStudents, setAllStudents] = useState<StudentOption[]>([]);
+
+    // Fetch all students for the "Add" list
     useEffect(() => {
       async function fetchStudents() {
         try {
@@ -180,161 +166,252 @@ export default function AdminCoursesPage() {
       fetchStudents();
     }, []);
 
-    // Find the selected batch object
+    // Derived State
     const selectedBatch = selectedCourse?.batches?.find(
-      (batch) => batch.id === selectedBatchId
+      (batch) => batch.id == selectedBatchId
     );
-    // Get students from batch object
     const currentStudents = selectedBatch?.students || [];
-    const filteredStudents = searchEmail
-      ? currentStudents.filter((student) =>
-          student.email.toLowerCase().includes(searchEmail.toLowerCase())
-        )
-      : currentStudents;
 
+    // Handlers
     async function handleDeleteStudent(studentId: string) {
       if (!selectedBatchId || !selectedCourse) return;
       try {
         await import("@/lib/api-courses").then(({ removeStudentFromBatch }) =>
           removeStudentFromBatch(selectedCourse.id, selectedBatchId, studentId)
         );
-        toast({ title: "Student deleted from batch!" });
-        // Optionally, refresh courses from backend here for up-to-date students
+        toast({ title: "Student removed from batch" });
+
+        // Refresh data
         const updatedCourses = await getCourses();
-        setCourses(Array.isArray(updatedCourses) ? updatedCourses : []);
+        const coursesList = Array.isArray(updatedCourses) ? updatedCourses : [];
+        setCourses(coursesList);
+        // Update local selected course to reflect changes immediately
+        const updatedSelected = coursesList.find((c: Course) => c.id === selectedCourse.id);
+        if (updatedSelected) setSelectedCourse(updatedSelected);
+
       } catch (err) {
         toast({ title: "Failed to delete student", description: String(err) });
       }
     }
 
+    async function handleAddStudents() {
+      if (!selectedBatchId || !selectedCourse || addStudentIds.length === 0) return;
+
+      const selectedEmails = allStudents
+        .filter((s) => addStudentIds.includes(s.id))
+        .map((s) => s.email)
+        // Prevent duplicates if API doesn't handle them (API does handle, but good to check)
+        .filter((email) => !currentStudents.some((stu: any) => stu.email === email));
+
+      if (selectedEmails.length === 0) {
+        toast({ title: "No new students selected", description: "Selected students are already in the batch." });
+        return;
+      }
+
+      let successCount = 0;
+      let errorMessages = [];
+
+      for (const email of selectedEmails) {
+        try {
+          const result = await import("@/lib/api-courses").then(({ addStudentToBatch }) =>
+            addStudentToBatch(selectedCourse.id, Number(selectedBatchId), email)
+          );
+          if (result && result.success) {
+            successCount++;
+          } else if (result && result.message && !result.message.includes("already in batch")) {
+            errorMessages.push(result.message);
+          }
+        } catch (err) {
+          errorMessages.push(`Error adding ${email}`);
+        }
+      }
+
+      setAddStudentIds([]);
+      setAddSearch("");
+
+      // Refresh data
+      const updatedCourses = await getCourses();
+      const coursesList = Array.isArray(updatedCourses) ? updatedCourses : [];
+      setCourses(coursesList);
+      const updatedSelected = coursesList.find((c: Course) => c.id === selectedCourse.id);
+      if (updatedSelected) setSelectedCourse(updatedSelected);
+
+      if (successCount > 0) toast({ title: `${successCount} students added!` });
+      if (errorMessages.length > 0) toast({ title: "Errors occurred", description: errorMessages.join(", ") });
+    }
+
     return (
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="p-0 overflow-hidden max-w-2xl gap-0 flex flex-col max-h-[85vh]">
+        <div className="p-6 border-b">
           <DialogTitle>Manage Batches - {selectedCourse?.title}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div>
-            <label className="block font-semibold mb-2">Select Batch</label>
-            <select
-              className="w-full border rounded px-3 py-2"
-              value={selectedBatchId}
-              onChange={(e) => {
-                // Always store as number for backend compatibility
-                const val = e.target.value;
-                setSelectedBatchId(val ? Number(val) : "");
-              }}
-            >
-              <option value="">Select a batch</option>
-              {selectedCourse?.batches?.map((batch) => (
-                <option key={batch.id} value={batch.id}>
-                  {batch.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <p className="text-sm text-muted-foreground mt-1">Add or remove students from your course batches.</p>
+        </div>
 
-          {selectedBatchId && (
-            <>
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-semibold">Students</span>
-                  <span className="text-sm bg-primary text-primary-foreground px-2 py-1 rounded">
-                    {filteredStudents.length} students
-                  </span>
-                </div>
-                <input
-                  className="w-full border rounded px-3 py-2 mb-3"
-                  placeholder="Search by email..."
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                />
-                <div className="max-h-60 overflow-y-auto space-y-2 border rounded bg-white">
-                  {filteredStudents.length > 0 ? (
-                    filteredStudents.map((student) => (
-                      <div
-                        key={student.id}
-                        className="flex justify-between items-center bg-background p-3 rounded border"
-                      >
-                        <span className="font-mono text-sm">{student.email}</span>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteStudent(student.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-muted-foreground text-sm">No students found.</p>
-                  )}
-                </div>
-              </div>
-              {/* Single module: Multi-select dropdown for students from database only */}
-              <div className="mt-6">
-                <label className="block mb-2 font-medium">Add Students to Batch:</label>
-                <input
-                  className="w-full border rounded px-3 py-2 mb-2"
-                  placeholder="Search students by name or email"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <StudentMultiSelect
-                  options={allStudents.filter(
-                    (s) =>
-                      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      s.email.toLowerCase().includes(searchTerm.toLowerCase())
-                  )}
-                  selected={selectedStudentIds}
-                  onChange={setSelectedStudentIds}
-                />
-                <Button
-                  type="button"
-                  className="mt-2"
-                  onClick={async () => {
-                    if (!selectedBatchId || !selectedCourse) return;
-                    const selectedEmails = allStudents
-                      .filter((s) => selectedStudentIds.includes(s.id))
-                      .map((s) => s.email)
-                      .filter((email) => !currentStudents.some((stu) => stu.email === email));
-                    let successCount = 0;
-                    let errorMessages = [];
-                    for (const email of selectedEmails) {
-                      const result = await import("@/lib/api-courses").then(({ addStudentToBatch }) =>
-                        addStudentToBatch(selectedCourse.id, Number(selectedBatchId), email)
-                      );
-                      // Only show error if backend returns failure
-                      if (result && result.success) {
-                        successCount++;
-                      } else if (result && result.message && !result.message.includes("already in batch")) {
-                        errorMessages.push(result.message || `Failed to add ${email}`);
-                      }
-                    }
-                    setSelectedStudentIds([]);
-                    setSearchTerm("");
-                    // Always refresh courses to update batch students
-                    const updatedCourses = await getCourses();
-                    setCourses(Array.isArray(updatedCourses) ? updatedCourses : []);
-                    // Show success only if students were actually added
-                    if (successCount > 0) {
-                      toast({ title: `${successCount} students added!` });
-                    }
-                    // Only show error if there are real failures (not duplicates)
-                    if (errorMessages.length > 0) {
-                      toast({ title: "Some errors occurred", description: errorMessages.join("; ") });
-                    }
-                  }}
-                  disabled={selectedStudentIds.length === 0}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+          {!selectedCourse?.batches || selectedCourse.batches.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No batches found for this course.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Batch Selector */}
+              <div className="grid gap-2">
+                <Label className="text-sm font-medium">Select Batch</Label>
+                <select
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  value={selectedBatchId}
+                  onChange={(e) => setSelectedBatchId(e.target.value)}
                 >
-                  Add Selected Students
-                </Button>
+                  {selectedCourse.batches.map((batch) => (
+                    <option key={batch.id} value={batch.id}>{batch.name}</option>
+                  ))}
+                </select>
               </div>
-            </>
-          )}
 
-          <Button variant="outline" onClick={onClose} className="w-full">
-            Close
-          </Button>
+              {selectedBatchId && (
+                <>
+                  {/* Current Students List */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Current Students</Label>
+                      <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-semibold">
+                        {currentStudents.length} enrolled
+                      </Badge>
+                    </div>
+
+                    <div className="relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                      <Input
+                        type="text"
+                        className="pl-9 bg-accent/20"
+                        placeholder="Filter current students..."
+                        value={currentSearch}
+                        onChange={(e) => setCurrentSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="border rounded-md overflow-hidden max-h-[200px] overflow-y-auto bg-card">
+                      {currentStudents.length === 0 ? (
+                        <div className="text-muted-foreground text-sm p-4 text-center bg-muted/30">No students in this batch yet.</div>
+                      ) : (
+                        <div className="divide-y">
+                          {currentStudents
+                            .filter((s: any) =>
+                              !currentSearch ||
+                              (s.email && s.email.toLowerCase().includes(currentSearch.toLowerCase())) ||
+                              (s.firstName && s.firstName.toLowerCase().includes(currentSearch.toLowerCase())) ||
+                              (s.lastName && s.lastName.toLowerCase().includes(currentSearch.toLowerCase()))
+                            )
+                            .map((student: any) => (
+                              <div key={student.id} className="flex items-center justify-between p-3 hover:bg-accent/50 transition-colors">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold uppercase shrink-0">
+                                    {(student.email || "?").substring(0, 2)}
+                                  </div>
+                                  <div className="flex flex-col overflow-hidden">
+                                    <span className="text-sm font-medium truncate">
+                                      {student.firstName && student.lastName
+                                        ? `${student.firstName} ${student.lastName}`
+                                        : student.email}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground truncate">{student.email}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
+                                  onClick={() => handleDeleteStudent(String(student.id))} // Use String casting if calling delete endpoint via ID
+                                // Note: original delete used `email` but updated API might accept ID? 
+                                // Actually, original code used student.id for delete: `handleDeleteStudent(student.id)`
+                                // And `handleDeleteStudent` calls `removeStudentFromBatch` which takes ID.
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-1 1-1h6c1 0 1 1 1 1v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Add Students Section */}
+                  <div className="space-y-3 pt-2 border-t">
+                    <Label className="text-sm font-medium flex items-center gap-2 text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                      Add New Students
+                    </Label>
+
+                    <div className="border rounded-md shadow-sm bg-card">
+                      <div className="p-2 border-b bg-muted/30">
+                        <Input
+                          type="text"
+                          className="h-9 border-none bg-transparent shadow-none focus-visible:ring-0 px-2 placeholder:text-muted-foreground/70"
+                          placeholder="Search available students..."
+                          value={addSearch}
+                          onChange={(e) => setAddSearch(e.target.value)}
+                        />
+                      </div>
+                      <div className="max-h-[220px] overflow-y-auto p-1 space-y-0.5">
+                        {allStudents
+                          .filter((student) =>
+                            !addSearch ||
+                            student.name.toLowerCase().includes(addSearch.toLowerCase()) ||
+                            student.email.toLowerCase().includes(addSearch.toLowerCase())
+                          )
+                          .map((student) => (
+                            <label
+                              key={student.id}
+                              className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-all ${addStudentIds.includes(student.id) ? 'bg-primary/10 border-primary/20' : 'hover:bg-accent'}`}
+                            >
+                              <div className="relative flex items-center">
+                                <input
+                                  type="checkbox"
+                                  className="peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 accent-primary"
+                                  checked={addStudentIds.includes(student.id)}
+                                  onChange={(e) => {
+                                    setAddStudentIds((ids) =>
+                                      e.target.checked
+                                        ? [...ids, student.id]
+                                        : ids.filter((id) => id !== student.id)
+                                    );
+                                  }}
+                                />
+                              </div>
+                              <div className="flex flex-col text-sm">
+                                <span className="font-medium leading-none">{student.name}</span>
+                                <span className="text-xs text-muted-foreground mt-0.5">{student.email}</span>
+                              </div>
+                            </label>
+                          ))}
+
+                        {allStudents.filter(s => !addSearch || s.name.toLowerCase().includes(addSearch.toLowerCase())).length === 0 && (
+                          <div className="py-8 text-center text-xs text-muted-foreground italic">No new students found</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xs text-muted-foreground">{addStudentIds.length} students selected</span>
+                      <Button
+                        size="sm"
+                        disabled={addStudentIds.length === 0}
+                        className="gap-2 transition-all hover:scale-105 active:scale-95"
+                        onClick={handleAddStudents}
+                      >
+                        Add Students
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t bg-muted/10 flex justify-end">
+          <Button variant="outline" onClick={onClose}>Close</Button>
         </div>
       </DialogContent>
     );

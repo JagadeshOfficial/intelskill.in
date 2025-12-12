@@ -15,6 +15,10 @@ public class ContentService {
 
     // Added logging and validation for metadata saving
     public void saveContent(String title, String description, String driveFileId, Integer tutorId) {
+        saveContent(title, description, driveFileId, tutorId, null);
+    }
+
+    public void saveContent(String title, String description, String driveFileId, Integer tutorId, Long folderId) {
         if (title == null || title.isEmpty() || driveFileId == null || driveFileId.isEmpty()) {
             throw new IllegalArgumentException("Invalid input data: title and driveFileId are required");
         }
@@ -24,6 +28,7 @@ public class ContentService {
         content.setDescription(description);
         content.setDriveFileId(driveFileId);
         content.setTutorId(tutorId);
+        content.setFolderId(folderId);
 
         tutorContentRepository.save(content);
         System.out.println("Content saved successfully: " + content);

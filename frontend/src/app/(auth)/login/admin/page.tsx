@@ -16,88 +16,92 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
 export default function AdminLoginPage() {
-    const adminLoginImage = getImage('login_admin');
-    const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+  const adminLoginImage = getImage('login_admin');
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-        try {
-            // Call backend auth service
-            const response = await fetch(`${API_BASE_URL}/api/v1/auth/admin/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                }),
-            });
+    try {
+      // Call backend auth service
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-            const data = await response.json();
+      const data = await response.json();
 
-            if (!response.ok || !data.success) {
-                setError(data.message || 'Login failed. Please try again.');
-                setLoading(false);
-                return;
-            }
+      if (!response.ok || !data.success) {
+        const msg = data.message || 'Login failed. Please try again.';
+        alert('Login Failed: ' + msg);
+        setError(msg);
+        setLoading(false);
+        return;
+      }
 
-            // Store token and admin info in localStorage
-            localStorage.setItem('adminToken', data.token);
-            localStorage.setItem('adminId', data.id);
-            localStorage.setItem('adminEmail', data.email);
-            localStorage.setItem('adminRole', data.role);
-            // Persist name parts returned from backend
-            if (data.firstName) localStorage.setItem('adminFirstName', data.firstName);
-            if (data.lastName) localStorage.setItem('adminLastName', data.lastName);
+      // Store token and admin info in localStorage
+      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminId', data.id);
+      localStorage.setItem('adminEmail', data.email);
+      localStorage.setItem('adminRole', data.role);
+      // Persist name parts returned from backend
+      if (data.firstName) localStorage.setItem('adminFirstName', data.firstName);
+      if (data.lastName) localStorage.setItem('adminLastName', data.lastName);
 
-            // Fetch profile to get extra fields (photoUrl, mobileNumber, timestamps)
-            try {
-              const profileRes = await fetch(`${API_BASE_URL}/api/v1/auth/admin/me`, {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${data.token}`,
-                }
-              });
-              if (profileRes.ok) {
-                const profile = await profileRes.json();
-                if (profile.photoUrl) localStorage.setItem('adminPhotoUrl', profile.photoUrl);
-                if (profile.mobileNumber) localStorage.setItem('adminMobileNumber', profile.mobileNumber);
-                if (profile.lastLogin) localStorage.setItem('adminLastLogin', JSON.stringify(profile.lastLogin));
-              }
-            } catch (err) {
-              // ignore profile fetch errors; login succeeded
-              console.warn('Failed to fetch admin profile after login', err);
-            }
-
-            // Redirect to admin dashboard
-            router.push('/admin/dashboard');
-        } catch (err) {
-            setError('Network error. Please check your connection and try again.');
-            console.error('Login error:', err);
-        } finally {
-            setLoading(false);
+      // Fetch profile to get extra fields (photoUrl, mobileNumber, timestamps)
+      try {
+        const profileRes = await fetch(`${API_BASE_URL}/api/v1/auth/admin/me`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${data.token}`,
+          }
+        });
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (profile.photoUrl) localStorage.setItem('adminPhotoUrl', profile.photoUrl);
+          if (profile.mobileNumber) localStorage.setItem('adminMobileNumber', profile.mobileNumber);
+          if (profile.lastLogin) localStorage.setItem('adminLastLogin', JSON.stringify(profile.lastLogin));
         }
+      } catch (err) {
+        // ignore profile fetch errors; login succeeded
+        console.warn('Failed to fetch admin profile after login', err);
+      }
+
+      alert('Login Successful! Redirecting...');
+      // Redirect to admin dashboard
+      window.location.href = '/admin/dashboard';
+    } catch (err) {
+      alert('Login Error: ' + err);
+      setError('Network error. Please check your connection and try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
+  }
 
   return (
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
       <div className="hidden lg:flex items-center justify-center bg-muted/50 p-10">
         <div className='relative w-full h-96'>
-             <Image 
-                src={adminLoginImage.imageUrl}
-                alt={adminLoginImage.description}
-                data-ai-hint={adminLoginImage.imageHint}
-                fill
-                className="object-contain rounded-lg"
-            />
+          <Image
+            src={adminLoginImage.imageUrl}
+            alt={adminLoginImage.description}
+            data-ai-hint={adminLoginImage.imageHint}
+            fill
+            className="object-contain rounded-lg"
+          />
         </div>
       </div>
       <div className="flex items-center justify-center py-12 px-4">
@@ -116,9 +120,9 @@ export default function AdminLoginPage() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
+                <Input
+                  id="email"
+                  type="email"
                   placeholder="admin@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -128,8 +132,8 @@ export default function AdminLoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
+                <Input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -146,9 +150,9 @@ export default function AdminLoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">
-              <Button 
+              <Button
                 type="submit"
-                className="w-full" 
+                className="w-full"
                 disabled={loading}
               >
                 {loading ? (

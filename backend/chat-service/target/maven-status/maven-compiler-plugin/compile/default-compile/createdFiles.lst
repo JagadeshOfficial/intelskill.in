@@ -1,0 +1,6 @@
+com\lms\chat\model\ChatMessage$MessageStatus.class
+com\lms\chat\controller\ChatController.class
+com\lms\chat\repository\ChatRepository.class
+com\lms\chat\model\ChatMessage.class
+com\lms\chat\ChatServiceApplication.class
+com\lms\chat\websocket\WebSocketConfig.class

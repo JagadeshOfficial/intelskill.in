@@ -7,7 +7,6 @@ import {
   Home,
   Users,
   BookOpen,
-  BarChart2,
   ShieldCheck,
   MessageSquare,
   UserCog,
@@ -22,7 +21,6 @@ const navLinks = [
   { href: '/admin/admins', label: 'Admins', icon: UserCog },
   { href: '/admin/courses', label: 'Courses', icon: GraduationCap },
   { href: '/admin/content', label: 'Content', icon: BookOpen },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
   { href: '/admin/tutor-applications', label: 'Tutor Apps', icon: ShieldCheck },
 ]
 
@@ -47,7 +45,7 @@ export function Sidebar() {
                 href={link.href}
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  pathname.startsWith(link.href) && link.href !== '/admin'
+                  pathname?.startsWith(link.href) && link.href !== '/admin'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}

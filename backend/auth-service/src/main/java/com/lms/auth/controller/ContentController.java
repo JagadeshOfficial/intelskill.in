@@ -19,7 +19,7 @@ public class ContentController {
     // Added error handling and validation for metadata saving
     @PostMapping
     public ResponseEntity<?> addContent(@RequestHeader("Authorization") String authorization,
-                                       @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body) {
         try {
             Integer tutorId = jwtTokenProvider.getAdminIdFromToken(authorization.substring(7));
             String title = body.get("title");
@@ -40,21 +40,24 @@ public class ContentController {
     // Added endpoint to handle file uploads
     @PostMapping("/upload")
     public ResponseEntity<?> uploadContent(@RequestHeader("Authorization") String authorization,
-                                            @RequestParam("file") MultipartFile file,
-                                            @RequestParam("courseId") String courseId,
-                                            @RequestParam("assignmentType") String assignmentType,
-                                            @RequestParam(value = "studentId", required = false) String studentId) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("courseId") String courseId,
+            @RequestParam("assignmentType") String assignmentType,
+            @RequestParam(value = "studentId", required = false) String studentId,
+            @RequestParam(value = "folderId", required = false) Long folderId) {
         try {
             Integer tutorId = jwtTokenProvider.getAdminIdFromToken(authorization.substring(7));
 
             if (file.isEmpty() || courseId == null || courseId.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "File and course are required"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "File and course are required"));
             }
 
             String driveFileId = contentService.uploadFileToDrive(file);
-            contentService.saveContent(file.getOriginalFilename(), "Uploaded via form", driveFileId, tutorId);
+            contentService.saveContent(file.getOriginalFilename(), "Uploaded via form", driveFileId, tutorId, folderId);
 
-            return ResponseEntity.ok(Map.of("success", true, "message", "File uploaded and metadata saved successfully"));
+            return ResponseEntity
+                    .ok(Map.of("success", true, "message", "File uploaded and metadata saved successfully"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Internal server error"));
         }

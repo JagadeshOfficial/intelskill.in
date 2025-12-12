@@ -1,7 +1,31 @@
+"use client";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, BarChart2 } from "lucide-react";
+import { Users, BookOpen, Database } from "lucide-react";
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState({ totalUsers: 0, totalCourses: 0, totalBatches: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const token = localStorage.getItem("adminToken");
+      try {
+        const res = await fetch("http://localhost:8081/api/v1/auth/admin/dashboard/stats", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats", error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div>
       <header className="mb-8">
@@ -17,8 +41,8 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,257</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">Students, Tutors & Admins</p>
           </CardContent>
         </Card>
         <Card>
@@ -27,18 +51,18 @@ export default function AdminDashboard() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">+3 new courses this quarter</p>
+            <div className="text-2xl font-bold">{stats.totalCourses}</div>
+            <p className="text-xs text-muted-foreground">Total courses created</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Site Traffic</CardTitle>
-            <BarChart2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">15,6K</div>
-            <p className="text-xs text-muted-foreground">Unique visitors this week</p>
+            <div className="text-2xl font-bold">{stats.totalBatches}</div>
+            <p className="text-xs text-muted-foreground">Active batches across courses</p>
           </CardContent>
         </Card>
       </main>

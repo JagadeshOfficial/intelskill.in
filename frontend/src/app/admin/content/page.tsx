@@ -1,325 +1,318 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
-import { getCourses, getBatches } from "@/lib/api-courses";
-import { createFolder, getFolders, deleteFolder, updateFolder } from "@/lib/api-folders";
-import { getFiles } from "@/lib/api-files";
-
-interface BreadcrumbsProps {
-  course: any;
-  batch: any;
-  folderPath: any[];
-  onNavigate: (type: string, folder?: any) => void;
-}
-
-function Breadcrumbs({ course, batch, folderPath, onNavigate }: BreadcrumbsProps) {
-  return (
-    <div className="flex items-center gap-2 mb-4 text-lg">
-      <Button variant="ghost" onClick={() => onNavigate('course')}>{course?.title}</Button>
-      {batch && <span>&gt;</span>}
-      {batch && <Button variant="ghost" onClick={() => onNavigate('batch')}>{batch.name}</Button>}
-      {folderPath.map((folder: any, idx: number) => (
-        <span key={folder.id}>
-          &gt; <Button variant="ghost" onClick={() => onNavigate('folder', folder)}>{folder.name}</Button>
-        </span>
-      ))}
-    </div>
-  );
-}
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search } from "lucide-react";
+import { getBatches } from "@/lib/api-courses";
+import { getFolders, createFolder } from "@/lib/api-folders";
+import { getFiles, uploadFile } from "@/lib/api-files";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminContentPage() {
+  const { toast } = useToast();
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
-  const [folders, setFolders] = useState<any[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<any>(null);
-  const [folderPath, setFolderPath] = useState<any[]>([]);
-  const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [files, setFiles] = useState<any[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadBatchId, setUploadBatchId] = useState<number | null>(null);
-  const [uploadFolderId, setUploadFolderId] = useState<number | null>(null);
-  const [uploadFileObj, setUploadFileObj] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [uploadLoadedMB, setUploadLoadedMB] = useState<number>(0);
-  const [uploadTotalMB, setUploadTotalMB] = useState<number>(0);
 
+  // Drive State
+  const [folders, setFolders] = useState<any[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+  const [folderPath, setFolderPath] = useState<any[]>([{ id: null, name: 'Home' }]);
+  const [files, setFiles] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Modals
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch Courses
   useEffect(() => {
-    getCourses().then((data) => setCourses(Array.isArray(data) ? data : []));
+    fetch('http://localhost:8081/api/courses')
+      .then(res => res.json())
+      .then(data => setCourses(Array.isArray(data) ? data : []));
   }, []);
 
+  // Fetch Batches
   useEffect(() => {
     if (selectedCourse) {
       getBatches(selectedCourse.id).then((data) => setBatches(Array.isArray(data) ? data : []));
       setSelectedBatch(null);
       setFolders([]);
-      setSelectedFolder(null);
-      setFolderPath([]);
+      setFiles([]);
     }
   }, [selectedCourse]);
 
+  // Fetch Folders (All batch folders)
   useEffect(() => {
     if (selectedBatch) {
-      getFolders(selectedBatch.id).then((data) => setFolders(Array.isArray(data) ? data : []));
-      setSelectedFolder(null);
-      setFolderPath([]);
+      setIsLoading(true);
+      getFolders(selectedBatch.id).then((data) => {
+        setFolders(Array.isArray(data) ? data : []);
+        setIsLoading(false);
+      });
+      setCurrentFolderId(null);
+      setFolderPath([{ id: null, name: 'Home' }]);
     }
   }, [selectedBatch]);
 
+  // Fetch Files (Lazy load for current folder)
   useEffect(() => {
-    if (selectedFolder) {
-      getFolders(selectedBatch.id).then((data) => setFolders(Array.isArray(data) ? data : []));
-      getFiles(selectedFolder.id).then((data) => setFiles(Array.isArray(data) ? data : []));
-      setFolderPath((prev) => {
-        const idx = prev.findIndex(f => f.id === selectedFolder.id);
-        if (idx !== -1) return prev.slice(0, idx + 1);
-        return [...prev, selectedFolder];
-      });
-    } else {
-      setFiles([]);
-    }
-  }, [selectedFolder]);
-
-  function handleNavigate(type: string, folder?: any) {
-    if (type === 'course') {
-      setSelectedCourse(null);
-      setSelectedBatch(null);
-      setSelectedFolder(null);
-      setFolderPath([]);
-    } else if (type === 'batch') {
-      setSelectedBatch(null);
-      setSelectedFolder(null);
-      setFolderPath([]);
-    } else if (type === 'folder') {
-      setSelectedFolder(folder);
-    }
-  }
-
-  async function handleCreateFolder() {
-    if (!newFolderName || !selectedBatch) return;
-    const parentId = selectedFolder?.id || null;
-    const folder = await createFolder(selectedBatch.id, newFolderName, parentId);
-    if (folder && folder.id) {
-      toast({ title: "Folder created!" });
-      setShowCreateFolder(false);
-      setNewFolderName("");
-      getFolders(selectedBatch.id).then((data) => setFolders(Array.isArray(data) ? data : []));
-    } else {
-      toast({ title: "Failed to create folder" });
-    }
-  }
-
-  function openUploadModal() {
-    setShowUploadModal(true);
-    setUploadBatchId(selectedBatch?.id || null);
-    setUploadFolderId(selectedFolder?.id || null);
-    setUploadFileObj(null);
-    setUploadProgress(0);
-    setUploadLoadedMB(0);
-    setUploadTotalMB(0);
-  }
-
-  function handleUploadInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null;
-    setUploadFileObj(file);
-    if (file) setUploadTotalMB(file.size / (1024 * 1024));
-  }
-
-  async function handleUploadSubmit() {
-    if (!uploadBatchId || !uploadFolderId || !uploadFileObj) {
-      toast({ title: "Select batch, folder, and file" });
-      return;
-    }
-    setUploading(true);
-    setUploadProgress(0);
-    setUploadLoadedMB(0);
-    // Simulate upload with progress
-    const total = uploadFileObj.size;
-    let loaded = 0;
-    const chunk = total / 20;
-    function simulateProgress() {
-      if (loaded < total) {
-        loaded += chunk;
-        if (loaded > total) loaded = total;
-        setUploadProgress(Math.round((loaded / total) * 100));
-        setUploadLoadedMB(loaded / (1024 * 1024));
-        setTimeout(simulateProgress, 150);
+    if (selectedBatch) {
+      if (currentFolderId) {
+        getFiles(currentFolderId).then((data) => setFiles(Array.isArray(data) ? data : []));
       } else {
-        setUploading(false);
-        setShowUploadModal(false);
-        toast({ title: "File uploaded!" });
-        getFiles(uploadFolderId).then((data) => setFiles(Array.isArray(data) ? data : []));
+        setFiles([]); // Clear files at root for now
       }
     }
-    simulateProgress();
-    // TODO: Replace with actual upload API call using fetch/XHR and onprogress
-  }
+  }, [selectedBatch, currentFolderId]);
+
+  const handleFolderClick = (folder: any) => {
+    setCurrentFolderId(folder.id);
+    setFolderPath([...folderPath, { id: folder.id, name: folder.name }]);
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    const newPath = folderPath.slice(0, index + 1);
+    setFolderPath(newPath);
+    setCurrentFolderId(newPath[newPath.length - 1].id);
+  };
+
+  const currentLevelFolders = folders.filter(f =>
+    (!currentFolderId && !f.parentId) || (f.parentId === currentFolderId)
+  );
+
+  const filteredFolders = currentLevelFolders.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredFiles = files.filter(f => f.data?.originalName?.toLowerCase().includes(searchQuery.toLowerCase()) || f.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim() || !selectedBatch) return;
+    try {
+      await createFolder(selectedBatch.id, newFolderName, currentFolderId);
+      // Refresh folders
+      const data = await getFolders(selectedBatch.id);
+      setFolders(Array.isArray(data) ? data : []);
+      setShowNewFolderModal(false);
+      setNewFolderName("");
+      toast({ title: "Folder created", variant: "default" });
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to create folder", variant: "destructive" });
+    }
+  };
+
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedBatch) return;
+
+    try {
+      // Need courseId (from selectedCourse)
+      await uploadFile(file, selectedCourse.id.toString(), currentFolderId || undefined);
+      // Refresh files
+      if (currentFolderId) {
+        const data = await getFiles(currentFolderId);
+        setFiles(Array.isArray(data) ? data : []);
+      }
+      setShowUploadModal(false);
+      toast({ title: "File uploaded", variant: "default" });
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to upload file", variant: "destructive" });
+    }
+  };
 
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold mb-6">Manage Content</h1>
-      <Breadcrumbs course={selectedCourse} batch={selectedBatch} folderPath={folderPath} onNavigate={handleNavigate} />
-      {/* Courses */}
-      <div className="mb-4">
-        <h2 className="font-semibold mb-2">Courses</h2>
-        <div className="flex gap-2">
-          {courses.map((course) => (
-            <Button key={course.id} onClick={() => setSelectedCourse(course)} variant={selectedCourse?.id === course.id ? "default" : "outline"}>
-              {course.title}
-            </Button>
-          ))}
-        </div>
-      </div>
-      {/* Batches */}
-      {selectedCourse && (
-        <div className="mb-4">
-          <h2 className="font-semibold mb-2">Batches</h2>
-          <div className="flex gap-2">
-            {batches.map((batch) => (
-              <Button key={batch.id} onClick={() => setSelectedBatch(batch)} variant={selectedBatch?.id === batch.id ? "default" : "outline"}>
-                {batch.name}
+    <div className="flex h-[calc(100vh-100px)] gap-6">
+      {/* Sidebar: Selection */}
+      <div className="w-64 shrink-0 flex flex-col gap-6 border-r pr-6">
+        <div>
+          <h2 className="text-lg font-semibold mb-3">1. Select Course</h2>
+          <div className="space-y-1">
+            {courses.map(course => (
+              <Button
+                key={course.id}
+                variant={selectedCourse?.id === course.id ? "secondary" : "ghost"}
+                className="w-full justify-start truncate"
+                onClick={() => setSelectedCourse(course)}
+              >
+                {course.title}
               </Button>
             ))}
           </div>
         </div>
-      )}
-      {/* Folders & Upload */}
-      {selectedBatch && (
-        <Card className="mb-4">
-          <CardContent className="pt-6">
-            <h2 className="font-semibold mb-2">Folders</h2>
-            <div className="flex gap-4 mb-4">
-              <Button variant="outline" onClick={() => setShowCreateFolder(true)}>
-                + Create Folder
-              </Button>
-            </div>
-            {/* Upload button below selected folder */}
-            {selectedFolder && (
-              <div className="flex gap-4 mb-4">
-                <Button variant="outline" onClick={openUploadModal}>
-                  ⬆️ Upload File/Video
+        {selectedCourse && (
+          <div>
+            <h2 className="text-lg font-semibold mb-3">2. Select Batch</h2>
+            <div className="space-y-1">
+              {batches.map(batch => (
+                <Button
+                  key={batch.id}
+                  variant={selectedBatch?.id === batch.id ? "secondary" : "ghost"}
+                  className="w-full justify-start truncate"
+                  onClick={() => setSelectedBatch(batch)}
+                >
+                  {batch.name}
                 </Button>
-              </div>
-            )}
-            {/* Upload Modal */}
-            {showUploadModal && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                  <h3 className="text-lg font-semibold mb-4">Upload File/Video</h3>
-                  <div className="mb-3">
-                    <label className="block mb-1">Select Batch</label>
-                    <select className="border rounded px-2 py-1 w-full" value={uploadBatchId ?? ''} onChange={e => setUploadBatchId(Number(e.target.value))}>
-                      <option value="" disabled>Select batch</option>
-                      {batches.map(batch => (
-                        <option key={batch.id} value={batch.id}>{batch.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="block mb-1">Select Folder</label>
-                    <select className="border rounded px-2 py-1 w-full" value={uploadFolderId ?? ''} onChange={e => setUploadFolderId(Number(e.target.value))}>
-                      <option value="" disabled>Select folder</option>
-                      {folders.filter(f => f.batch?.id === uploadBatchId).map(folder => (
-                        <option key={folder.id} value={folder.id}>{folder.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="block mb-1">Choose File/Video</label>
-                    <input type="file" accept="video/*,application/*" onChange={handleUploadInputChange} disabled={uploading} />
-                  </div>
-                  {uploading && (
-                    <div className="mb-3">
-                      <div className="w-full bg-gray-200 rounded h-4 mb-1">
-                        <div className="bg-blue-500 h-4 rounded" style={{ width: `${uploadProgress}%` }}></div>
-                      </div>
-                      <div className="text-sm text-gray-700">{uploadProgress}% &nbsp;|&nbsp; {uploadLoadedMB.toFixed(2)} MB / {uploadTotalMB.toFixed(2)} MB</div>
-                    </div>
-                  )}
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setShowUploadModal(false)} disabled={uploading}>Cancel</Button>
-                    <Button onClick={handleUploadSubmit} disabled={uploading || !uploadFileObj || !uploadBatchId || !uploadFolderId}>Upload</Button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {showCreateFolder && (
-              <div className="mt-2 flex gap-2">
-                <input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Folder name" className="border px-2 py-1 rounded" />
-                <Button onClick={handleCreateFolder}>Save</Button>
-              </div>
-            )}
-            <div className="flex gap-2 mb-2">
-              {folders
-                .filter(f => (selectedFolder ? f.parent?.id === selectedFolder.id : !f.parent))
-                .map((folder) => (
-                  <div key={folder.id} className="flex items-center gap-2">
-                    <Button onClick={() => setSelectedFolder(folder)} variant={selectedFolder?.id === folder.id ? "default" : "outline"}>
-                      {folder.name}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={async () => {
-                      if (confirm('Delete this folder?')) {
-                        try {
-                          const res = await deleteFolder(folder.id);
-                          if (res && res.success !== false) {
-                            toast({ title: "Folder deleted!" });
-                            const updatedFolders = await getFolders(selectedBatch.id);
-                            setFolders(Array.isArray(updatedFolders) ? updatedFolders : []);
-                            if (selectedFolder?.id === folder.id) setSelectedFolder(null);
-                          } else {
-                            toast({ title: "Failed to delete folder", description: res?.message || undefined });
-                          }
-                        } catch (err) {
-                          toast({ title: "Error deleting folder" });
-                        }
-                      }
-                    }}>🗑️</Button>
-                    <Button variant="ghost" size="sm" onClick={async () => {
-                      const newName = prompt('Edit folder name:', folder.name);
-                      if (newName && newName !== folder.name) {
-                        try {
-                          const res = await updateFolder(folder.id, newName);
-                          if (res && res.success !== false) {
-                            toast({ title: "Folder name updated!" });
-                            const updatedFolders = await getFolders(selectedBatch.id);
-                            setFolders(Array.isArray(updatedFolders) ? updatedFolders : []);
-                          } else {
-                            toast({ title: "Failed to update folder name", description: res?.message || undefined });
-                          }
-                        } catch (err) {
-                          toast({ title: "Error updating folder name" });
-                        }
-                      }
-                    }}>✏️</Button>
+              ))}
+              {batches.length === 0 && <p className="text-sm text-muted-foreground p-2">No batches found.</p>}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content: Drive */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {!selectedBatch ? (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
+            <div className="text-center">
+              <Folder className="w-12 h-12 mx-auto mb-2 opacity-20" />
+              <p>Select a course and batch to view content</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Drive Header */}
+            <div className="flex items-center justify-between mb-4 pb-4 border-b">
+              <div className="flex items-center gap-2 overflow-hidden">
+                {folderPath.map((item, index) => (
+                  <div key={index} className="flex items-center text-sm font-medium">
+                    {index > 0 && <ChevronRight className="w-4 h-4 mx-1 text-muted-foreground" />}
+                    <button
+                      onClick={() => handleBreadcrumbClick(index)}
+                      className={`hover:bg-accent px-2 py-1 rounded transition-colors ${index === folderPath.length - 1 ? 'text-primary font-bold' : 'text-muted-foreground'}`}
+                    >
+                      {item.id === null ? <Home className="w-4 h-4" /> : item.name}
+                    </button>
                   </div>
                 ))}
-            </div>
-            {/* Files/Videos in folder */}
-            {selectedFolder && (
-              <div className="mt-6">
-                <h3 className="font-semibold mb-2">Files & Videos</h3>
-                {files.length === 0 ? (
-                  <p className="text-muted-foreground">No files in this folder.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {files.map(file => (
-                      <li key={file.id} className="border rounded p-2 flex items-center gap-2">
-                        <span>{file.name}</span>
-                        {/* Add preview/download/play logic here */}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search"
+                    className="pl-8 h-9 w-[200px]"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center border rounded-md bg-background">
+                  <Button variant="ghost" size="icon" className={`h-8 w-8 ${viewMode === 'grid' ? 'bg-accent text-accent-foreground' : ''}`} onClick={() => setViewMode('grid')}>
+                    <Grid className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className={`h-8 w-8 ${viewMode === 'list' ? 'bg-accent text-accent-foreground' : ''}`} onClick={() => setViewMode('list')}>
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="gap-2">
+                      <Plus className="w-4 h-4" /> New
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowNewFolderModal(true)}>
+                      <Folder className="w-4 h-4 mr-2" /> New Folder
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="w-4 h-4 mr-2" /> File Upload
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleUploadFile}
+                />
+              </div>
+            </div>
+
+            {/* Drive Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Folders */}
+              {filteredFolders.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Folders</h3>
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" : "flex flex-col gap-1"}>
+                    {filteredFolders.map(folder => (
+                      <div
+                        key={folder.id}
+                        className={`group flex items-center gap-3 p-3 rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:bg-accent/50 hover:shadow-md ${viewMode === 'grid' ? 'flex-col justify-center text-center py-6 h-32' : ''}`}
+                        onDoubleClick={() => handleFolderClick(folder)}
+                      >
+                        <div className={`p-2 rounded-full bg-yellow-100 text-yellow-600 ${viewMode === 'list' && 'shrink-0'}`}>
+                          <Folder className={viewMode === 'grid' ? "w-8 h-8 fill-current" : "w-5 h-5 fill-current"} />
+                        </div>
+                        <span className="text-sm font-medium truncate w-full">{folder.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Files */}
+              {filteredFiles.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Files</h3>
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" : "flex flex-col gap-1"}>
+                    {filteredFiles.map(file => (
+                      <div
+                        key={file.id}
+                        className={`group flex items-center gap-3 p-3 rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:bg-accent/50 hover:shadow-md ${viewMode === 'grid' ? 'flex-col justify-center text-center py-6 h-32' : ''}`}
+                      >
+                        <div className={`p-2 rounded-full bg-blue-100 text-blue-600 ${viewMode === 'list' && 'shrink-0'}`}>
+                          <FileText className={viewMode === 'grid' ? "w-8 h-8" : "w-5 h-5"} />
+                        </div>
+                        <div className="text-left w-full overflow-hidden">
+                          <p className={`text-sm font-medium truncate ${viewMode === 'grid' && 'text-center'}`}>{file.title || file.name || "Untitled"}</p>
+                          {viewMode === 'list' && <p className="text-xs text-muted-foreground mt-0.5">{new Date(file.createdAt).toLocaleDateString()}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+                <div className="text-center py-20 text-muted-foreground">
+                  <div className="bg-muted/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Plus className="w-10 h-10 opacity-20" />
+                  </div>
+                  <p>This folder is empty.</p>
+                  <Button variant="link" onClick={() => setShowNewFolderModal(true)} className="mt-2">Create a new folder</Button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* New Folder Modal */}
+      <Dialog open={showNewFolderModal} onOpenChange={setShowNewFolderModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Folder</DialogTitle>
+            <DialogDescription>Create a new folder to organize your content.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Folder Name"
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewFolderModal(false)}>Cancel</Button>
+            <Button onClick={handleCreateFolder}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

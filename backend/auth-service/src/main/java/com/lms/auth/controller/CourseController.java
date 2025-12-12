@@ -68,7 +68,8 @@ public class CourseController {
     }
 
     @PostMapping("/{courseId}/batches/{batchId}/students")
-    public java.util.Map<String, Object> addStudentToBatch(@PathVariable Long courseId, @PathVariable Long batchId, @RequestBody String email) {
+    public java.util.Map<String, Object> addStudentToBatch(@PathVariable Long courseId, @PathVariable Long batchId,
+            @RequestBody String email) {
         try {
             Batch batch = batchRepository.findById(batchId).orElse(null);
             if (batch == null) {
@@ -91,7 +92,8 @@ public class CourseController {
     }
 
     @DeleteMapping("/{courseId}/batches/{batchId}/students/{email}")
-    public java.util.Map<String, Object> removeStudentFromBatch(@PathVariable Long courseId, @PathVariable Long batchId, @PathVariable String email) {
+    public java.util.Map<String, Object> removeStudentFromBatch(@PathVariable Long courseId, @PathVariable Long batchId,
+            @PathVariable String email) {
         try {
             Batch batch = batchRepository.findById(batchId).orElse(null);
             if (batch == null) {
@@ -114,8 +116,10 @@ public class CourseController {
             return java.util.Map.of("success", false, "message", e.getMessage());
         }
     }
+
     @PutMapping("/{courseId}")
-    public java.util.Map<String, Object> updateCourse(@PathVariable Long courseId, @RequestBody java.util.Map<String, Object> updates) {
+    public java.util.Map<String, Object> updateCourse(@PathVariable Long courseId,
+            @RequestBody java.util.Map<String, Object> updates) {
         Course course = courseRepository.findById(courseId).orElseThrow();
         if (updates.containsKey("title")) {
             course.setTitle((String) updates.get("title"));
@@ -134,5 +138,34 @@ public class CourseController {
         }
         courseRepository.deleteById(courseId);
         return java.util.Map.of("success", true, "message", "Course deleted successfully");
+    }
+
+    @GetMapping("/student/{email}")
+    public List<Course> getStudentCourses(@PathVariable String email) {
+        List<Course> allCourses = courseRepository.findAll();
+        List<Course> studentCourses = new java.util.ArrayList<>();
+        String cleanEmail = email.trim().toLowerCase();
+
+        for (Course course : allCourses) {
+            boolean isEnrolled = false;
+            if (course.getBatches() != null) {
+                for (Batch batch : course.getBatches()) {
+                    if (batch.getStudents() != null) {
+                        for (Student s : batch.getStudents()) {
+                            if (s.getEmail().trim().toLowerCase().equals(cleanEmail)) {
+                                isEnrolled = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isEnrolled)
+                        break;
+                }
+            }
+            if (isEnrolled) {
+                studentCourses.add(course);
+            }
+        }
+        return studentCourses;
     }
 }

@@ -13,17 +13,16 @@ import {
   Video,
   FileText,
   MessageSquare,
-  Calendar,
   PenSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-  const navLinks = [
+const navLinks = [
   { href: '/tutor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/tutor/courses', label: 'Courses', icon: BookCopy },
   { href: '/tutor/content', label: 'Content', icon: FileText },
   { href: '/tutor/tests', label: 'Tests', icon: PenSquare },
-  { href: '/tutor/sessions', label: 'Sessions', icon: Calendar },
+  { href: '/messages', label: 'Messages', icon: MessageSquare },
 ]
 
 import { tutorCourses } from '../content/data'

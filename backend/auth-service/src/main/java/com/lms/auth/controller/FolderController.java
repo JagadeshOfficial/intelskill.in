@@ -4,6 +4,8 @@ import com.lms.auth.entity.Folder;
 import com.lms.auth.entity.Batch;
 import com.lms.auth.repository.FolderRepository;
 import com.lms.auth.repository.BatchRepository;
+import com.lms.auth.entity.TutorContent;
+import com.lms.auth.repository.TutorContentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -18,20 +20,36 @@ public class FolderController {
     private FolderRepository folderRepository;
     @Autowired
     private BatchRepository batchRepository;
+    @Autowired
+    private TutorContentRepository tutorContentRepository;
 
     @PostMapping("/{batchId}/folders")
-    public Folder createFolder(@PathVariable Long batchId, @RequestBody Map<String, String> body) {
+    public Folder createFolder(@PathVariable Long batchId, @RequestBody Map<String, Object> body) {
         Batch batch = batchRepository.findById(batchId).orElseThrow();
         Folder folder = new Folder();
         folder.setBatch(batch);
-        folder.setName(body.get("name"));
-        // Optionally set parent folder if needed
+        folder.setName((String) body.get("name"));
+
+        if (body.containsKey("parentId") && body.get("parentId") != null) {
+            try {
+                Long parentId = Long.parseLong(body.get("parentId").toString());
+                Folder parent = folderRepository.findById(parentId).orElse(null);
+                folder.setParent(parent);
+            } catch (NumberFormatException e) {
+                // Ignore invalid parentId
+            }
+        }
         return folderRepository.save(folder);
     }
 
     @GetMapping("/{batchId}/folders")
     public List<Folder> getFolders(@PathVariable Long batchId) {
-        return folderRepository.findByBatchId(batchId);
+        return folderRepository.findByBatch_Id(batchId);
+    }
+
+    @GetMapping("/folders/{folderId}/files")
+    public List<TutorContent> getFiles(@PathVariable Long folderId) {
+        return tutorContentRepository.findByFolderId(folderId);
     }
 
     // Delete a folder by its ID
@@ -47,13 +65,12 @@ public class FolderController {
     }
 
     private void deleteFolderRecursively(Long folderId) {
-        List<Folder> children = folderRepository.findByParentId(folderId);
+        List<Folder> children = folderRepository.findByParent_Id(folderId);
         for (Folder child : children) {
             deleteFolderRecursively(child.getId());
         }
         folderRepository.deleteById(folderId);
     }
-        
 
     // Update a folder's name by its ID
     @Transactional

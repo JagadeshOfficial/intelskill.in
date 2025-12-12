@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface TutorContentRepository extends JpaRepository<TutorContent, Integer> {
     List<TutorContent> findByTutorId(Integer tutorId);
+
+    List<TutorContent> findByFolderId(Long folderId);
 }

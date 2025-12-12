@@ -1,0 +1,22 @@
+# Ignore environment variables and secrets
+.env
+
+# Ignore build artifacts and large files
+*.jar
+*.war
+*.class
+backend/auth-service/target/
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Ignore IDE files
+.vscode/
+.idea/
