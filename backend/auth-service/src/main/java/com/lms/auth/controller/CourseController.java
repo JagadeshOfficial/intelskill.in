@@ -67,6 +67,46 @@ public class CourseController {
         return savedBatch;
     }
 
+    @PutMapping("/{courseId}/batches/{batchId}")
+    public java.util.Map<String, Object> updateBatch(@PathVariable Long courseId, @PathVariable Long batchId,
+            @RequestBody java.util.Map<String, Object> updates) {
+        try {
+            Batch batch = batchRepository.findById(batchId).orElse(null);
+            if (batch == null) {
+                return java.util.Map.of("success", false, "message", "Batch not found");
+            }
+            if (updates.containsKey("name")) {
+                batch.setName((String) updates.get("name"));
+            }
+            batchRepository.save(batch);
+            return java.util.Map.of("success", true, "message", "Batch updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return java.util.Map.of("success", false, "message", e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{courseId}/batches/{batchId}")
+    public java.util.Map<String, Object> deleteBatch(@PathVariable Long courseId, @PathVariable Long batchId) {
+        try {
+            if (!batchRepository.existsById(batchId)) {
+                return java.util.Map.of("success", false, "message", "Batch not found");
+            }
+            // Remove batch from course if present
+            Optional<Course> courseOpt = courseRepository.findById(courseId);
+            if (courseOpt.isPresent()) {
+                Course course = courseOpt.get();
+                course.getBatches().removeIf(b -> b.getId().equals(batchId));
+                courseRepository.save(course);
+            }
+            batchRepository.deleteById(batchId);
+            return java.util.Map.of("success", true, "message", "Batch deleted successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return java.util.Map.of("success", false, "message", e.getMessage());
+        }
+    }
+
     @PostMapping("/{courseId}/batches/{batchId}/students")
     public java.util.Map<String, Object> addStudentToBatch(@PathVariable Long courseId, @PathVariable Long batchId,
             @RequestBody String email) {

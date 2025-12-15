@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search } from "lucide-react";
-import { getBatches } from "@/lib/api-courses";
-import { getFolders, createFolder } from "@/lib/api-folders";
+import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search, Download, Trash, MoreHorizontal, Edit2 } from "lucide-react";
+import { getBatches, deleteBatch, updateBatch } from "@/lib/api-courses";
+import { getFolders, createFolder, deleteFolder, updateFolder } from "@/lib/api-folders";
 import { getFiles, uploadFile, saveFileMetadata } from "@/lib/api-files";
 import { useToast } from "@/hooks/use-toast";
 
 import { FileUpload } from "@/components/admin/content/FileUpload";
 import { auth } from "@/lib/firebase";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
+import { downloadFile as downloadFileHelper } from "../../../lib/download-helper";
+import { deleteFileMetadata, deleteStorageObject, updateFileName } from "@/lib/api-files";
 
 export default function AdminContentPage() {
   const { toast } = useToast();
@@ -30,11 +32,25 @@ export default function AdminContentPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<string>("Pending...");
+  // debug raw docs removed
 
   // Modals
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  // Rename modal state
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<any | null>(null);
+  const [renameValue, setRenameValue] = useState<string>("");
+  // Batch rename/delete state
+  const [batchRenameTarget, setBatchRenameTarget] = useState<any | null>(null);
+  const [batchRenameValue, setBatchRenameValue] = useState<string>("");
+  const [showBatchRenameModal, setShowBatchRenameModal] = useState(false);
+  // Folder rename/delete state
+  const [folderRenameTarget, setFolderRenameTarget] = useState<any | null>(null);
+  const [folderRenameValue, setFolderRenameValue] = useState<string>("");
+  const [showFolderRenameModal, setShowFolderRenameModal] = useState(false);
+  // removed rename state - admin will display original filenames only
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -82,7 +98,7 @@ export default function AdminContentPage() {
       setFolderPath([{ id: null, name: 'Home' }]);
       // Eagerly fetch root files
       if (selectedCourse) {
-        getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), null).then(data => setFiles(data));
+  getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), null).then(data => debugSetFiles(data));
       }
     }
   }, [selectedBatch]);
@@ -98,9 +114,29 @@ export default function AdminContentPage() {
 
       // Pass currentFolderId to filter properly
       getFiles(cId, bId, currentFolderId)
-        .then((data) => {
+        .then(async (data) => {
+          // Debug: log any file objects that lack name information
+          try {
+            const missing = (Array.isArray(data) ? data : []).filter((f: any) => !f.fileName && !f.title && !f.displayName && !f.storagePath);
+            if (missing.length > 0) {
+              console.warn('Admin: files missing naming fields:', missing);
+            }
+          } catch (err) {
+            console.error('Debug check failed', err);
+          }
           console.log("Fetched files:", data.length);
-          setFiles(Array.isArray(data) ? data : []);
+          // If no files found for the specific folder, fall back to returning all batch files
+              if (Array.isArray(data) && data.length === 0) {
+            try {
+              const all = await getFiles(cId, bId, 'ANY');
+              console.log("Fallback: fetched all batch files:", all.length);
+              setFiles(Array.isArray(all) ? enhanceFiles(all) : []); // still use setFiles for fallbacks
+            } catch (e) {
+              setFiles([]);
+            }
+          } else {
+            debugSetFiles(data);
+          }
           setLastFetchTime(new Date().toLocaleTimeString());
         })
         .catch(err => {
@@ -127,8 +163,8 @@ export default function AdminContentPage() {
 
   const filteredFolders = currentLevelFolders.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredFiles = files.filter(f => {
-    const name = f.title || f.fileName || "Untitled";
-    return name.toLowerCase().includes(searchQuery.toLowerCase());
+    const name = (f.displayName || f.title || f.fileName || "Untitled");
+    return String(name).toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const handleCreateFolder = async () => {
@@ -136,7 +172,7 @@ export default function AdminContentPage() {
     try {
       if (selectedBatch) {
         // Force refresh files too to ensure they are visible
-        getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).then(f => setFiles(f));
+  getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).then(f => debugSetFiles(f));
       }
       await createFolder(selectedBatch.id, newFolderName, currentFolderId);
       // Refresh folders
@@ -150,14 +186,34 @@ export default function AdminContentPage() {
     }
   };
 
-  const handleUploadComplete = async (url: string, fileType: string, fileName: string) => {
+  // Confirm folder rename
+  const confirmFolderRename = async () => {
+    if (!folderRenameTarget || !folderRenameTarget.id) return;
+    try {
+      await updateFolder(folderRenameTarget.id, folderRenameValue);
+      toast({ title: "Folder renamed", description: "Folder name updated." });
+      setShowFolderRenameModal(false);
+      // Refresh folders for current batch
+      if (selectedBatch) {
+        const data = await getFolders(selectedBatch.id);
+        setFolders(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Rename Failed", description: (e as any).message || String(e), variant: "destructive" });
+    }
+  };
+
+  const handleUploadComplete = async (url: string, fileType: string, fileName: string, storagePath?: string, size?: number, duration?: number | null) => {
     // Create a file record in the backend with the Firebase URL
     if (!selectedBatch || !selectedCourse) return;
 
     try {
       const cId = selectedCourse.id.toString();
       const bId = selectedBatch.id.toString();
-      const storagePath = `courses/${cId}/batches/${bId}/${fileName}`;
+
+      // Prefer the exact storagePath returned by the uploader; otherwise construct one.
+      const finalStoragePath = storagePath || `courses/${cId}/batches/${bId}/${fileName}`;
 
       await saveFileMetadata({
         courseId: cId,
@@ -165,8 +221,11 @@ export default function AdminContentPage() {
         folderId: currentFolderId, // Save with current folder ID
         fileName: fileName,
         fileType: fileType,
-        storagePath: storagePath,
-        downloadUrl: url
+        size: size,
+        duration: duration ?? null,
+        storagePath: finalStoragePath,
+        downloadUrl: url,
+        title: getDisplayName({ fileName, fileType, storagePath: finalStoragePath })
       });
 
       toast({ title: "File Uploaded", description: "Saved successfully." });
@@ -175,11 +234,116 @@ export default function AdminContentPage() {
       // Refresh files list
       const data = await getFiles(cId, bId, currentFolderId)
         .catch(e => { console.error(e); return []; });
-      setFiles(Array.isArray(data) ? data : []);
+  debugSetFiles(data);
 
     } catch (e) {
       console.error(e);
       toast({ title: "Error", description: "Failed to save file", variant: "destructive" });
+    }
+  };
+
+  // Download helper that triggers browser download
+  const handleDownload = (file: any) => {
+    // If we have a downloadUrl, open it in a new tab; otherwise, try to construct a signed URL
+    if (file.downloadUrl) {
+      window.open(file.downloadUrl, "_blank");
+    } else if (file.storagePath) {
+      // Fallback: use client-side helper (will attempt getDownloadURL)
+      downloadFileHelper(file.storagePath).catch((e) => {
+        toast({ title: "Download Failed", description: e.message || String(e), variant: "destructive" });
+      });
+    } else {
+      toast({ title: "Download Failed", description: "No URL available", variant: "destructive" });
+    }
+  };
+
+  // Delete both storage object and metadata (asks user to confirm)
+  const handleDelete = async (file: any) => {
+    if (!confirm(`Delete "${file.displayName || file.title || file.fileName}"? This will remove the file and its metadata.`)) return;
+    try {
+      if (file.storagePath) await deleteStorageObject(file.storagePath);
+      if (file.id) await deleteFileMetadata(file.id);
+      toast({ title: "Deleted", description: "File removed." });
+      // Refresh list
+  const data = await getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).catch(() => []);
+  debugSetFiles(data);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Delete Failed", description: (e as any).message || String(e), variant: "destructive" });
+    }
+  };
+
+  // admin no longer supports renaming from UI; files display original filename
+
+  // Helper to get a friendly display name for a file
+  const getDisplayName = (file: any) => {
+    if (!file) return "Untitled";
+    // Prefer explicit title, then fileName, then raw.name, then last segment of storagePath
+    const candidates = [file.title, file.fileName, file.name, file.raw?.fileName, file.raw?.name];
+    for (const c of candidates) {
+      if (c && String(c).trim() !== "") return String(c);
+    }
+    if (file.storagePath) {
+      const parts = String(file.storagePath).split('/');
+      let name = parts[parts.length - 1] || file.storagePath;
+      // Strip common timestamp prefix like '1765771333111_' if present
+      name = name.replace(/^\d+_/, '');
+      try {
+        name = decodeURIComponent(name);
+      } catch (e) {
+        // ignore decode errors
+      }
+      return name;
+    }
+    return "Untitled";
+  };
+
+  const confirmRename = async () => {
+    if (!renameTarget || !renameTarget.id) return;
+    try {
+      await updateFileName(renameTarget.id, renameValue);
+      toast({ title: "Renamed", description: "File metadata updated." });
+      setShowRenameModal(false);
+      // Refresh list
+      const data = await getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).catch(() => []);
+      debugSetFiles(data);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Rename Failed", description: (e as any).message || String(e), variant: "destructive" });
+    }
+  };
+
+  // Confirm batch rename
+  const confirmBatchRename = async () => {
+    if (!batchRenameTarget || !batchRenameTarget.id || !selectedCourse) return;
+    try {
+      await updateBatch(selectedCourse.id, batchRenameTarget.id, { name: batchRenameValue });
+      toast({ title: "Batch renamed", description: "Batch name updated." });
+      setShowBatchRenameModal(false);
+      const data = await getBatches(selectedCourse.id);
+      setBatches(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Rename Failed", description: (e as any).message || String(e), variant: "destructive" });
+    }
+  };
+
+  // Enhance file array with computed displayName so UI can rely on it
+  const enhanceFiles = (arr: any[]) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(f => ({ ...f, displayName: getDisplayName(f) }));
+  };
+
+  // Debug helper: log raw and enhanced files before setting state
+  const debugSetFiles = (raw: any[]) => {
+    try {
+      console.log("Admin: raw files sample:", Array.isArray(raw) ? raw.slice(0, 5) : raw);
+      const enhanced = enhanceFiles(Array.isArray(raw) ? raw : []);
+      console.log("Admin: enhanced files sample:", enhanced.slice(0, 5));
+      setFiles(enhanced);
+    } catch (err) {
+      console.error("Admin: debugSetFiles failed", err);
+      setFiles(enhanceFiles(raw));
     }
   };
 
@@ -207,14 +371,37 @@ export default function AdminContentPage() {
             <h2 className="text-lg font-semibold mb-3">2. Select Batch</h2>
             <div className="space-y-1">
               {batches.map(batch => (
-                <Button
-                  key={batch.id}
-                  variant={selectedBatch?.id === batch.id ? "secondary" : "ghost"}
-                  className="w-full justify-start truncate"
-                  onClick={() => setSelectedBatch(batch)}
-                >
-                  {batch.name}
-                </Button>
+                <div key={batch.id} className="flex items-center gap-2">
+                  <Button
+                    variant={selectedBatch?.id === batch.id ? "secondary" : "ghost"}
+                    className="w-full justify-start truncate"
+                    onClick={() => setSelectedBatch(batch)}
+                  >
+                    {batch.name}
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" title="Rename batch" onClick={() => { setBatchRenameTarget(batch); setBatchRenameValue(batch.name); setShowBatchRenameModal(true); }}>
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Delete batch" onClick={async () => {
+                      if (!selectedCourse) return;
+                      if (!confirm(`Delete batch "${batch.name}"? This will remove the batch and its content.`)) return;
+                      try {
+                        await deleteBatch(selectedCourse.id, batch.id);
+                        toast({ title: "Batch deleted", description: "Batch removed." });
+                        const data = await getBatches(selectedCourse.id);
+                        setBatches(Array.isArray(data) ? data : []);
+                        // Clear selection if it was the deleted batch
+                        if (selectedBatch?.id === batch.id) setSelectedBatch(null);
+                      } catch (e) {
+                        console.error(e);
+                        toast({ title: "Delete Failed", description: (e as any).message || String(e), variant: "destructive" });
+                      }
+                    }}>
+                      <Trash className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
               ))}
               {batches.length === 0 && <p className="text-sm text-muted-foreground p-2">No batches found.</p>}
             </div>
@@ -304,7 +491,30 @@ export default function AdminContentPage() {
                         <div className={`p-2 rounded-full bg-yellow-100 text-yellow-600 ${viewMode === 'list' && 'shrink-0'}`}>
                           <Folder className={viewMode === 'grid' ? "w-8 h-8 fill-current" : "w-5 h-5 fill-current"} />
                         </div>
-                        <span className="text-sm font-medium truncate w-full">{folder.name}</span>
+                        <div className="flex items-center w-full justify-between">
+                          <span className="text-sm font-medium truncate">{folder.name}</span>
+                          <div className="flex items-center gap-1 ml-3">
+                            <Button variant="ghost" size="icon" title="Rename folder" onClick={() => { setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Delete folder" onClick={async () => {
+                              if (!confirm(`Delete folder "${folder.name}"? This will remove the folder and its contents.`)) return;
+                              try {
+                                await deleteFolder(folder.id);
+                                toast({ title: "Folder deleted", description: "Folder removed." });
+                                if (selectedBatch) {
+                                  const data = await getFolders(selectedBatch.id);
+                                  setFolders(Array.isArray(data) ? data : []);
+                                }
+                              } catch (e) {
+                                console.error(e);
+                                toast({ title: "Delete Failed", description: (e as any).message || String(e), variant: "destructive" });
+                              }
+                            }}>
+                              <Trash className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -317,19 +527,52 @@ export default function AdminContentPage() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-medium text-muted-foreground">Files</h3>
                   </div>
-                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" : "flex flex-col gap-1"}>
+
+                  <div className={viewMode === 'grid' ? 'file-grid' : 'flex flex-col ga p-1'}>
                     {filteredFiles.map(file => (
-                      <div
-                        key={file.id}
-                        className={`group flex items-center gap-3 p-3 rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:bg-accent/50 hover:shadow-md ${viewMode === 'grid' ? 'flex-col justify-center text-center py-6 h-32' : ''}`}
-                      >
-                        <div className={`p-2 rounded-full bg-blue-100 text-blue-600 ${viewMode === 'list' && 'shrink-0'}`}>
+                      <div key={file.id} className={`file-card ${viewMode === 'grid' ? 'grid' : 'list'}`}>
+                        <div className="file-icon">
                           <FileText className={viewMode === 'grid' ? "w-8 h-8" : "w-5 h-5"} />
                         </div>
-                        <div className="text-left w-full overflow-hidden">
-                          <p className={`text-sm font-medium truncate ${viewMode === 'grid' && 'text-center'}`}>{file.title || file.name || "Untitled"}</p>
-                          {viewMode === 'list' && <p className="text-xs text-muted-foreground mt-0.5">{new Date(file.createdAt).toLocaleDateString()}</p>}
-                        </div>
+
+                        {viewMode === 'grid' ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="file-name-badge" aria-label={file.displayName || file.fileName || getDisplayName(file)} title={file.displayName || file.fileName || getDisplayName(file)}>
+                              {file.displayName || file.fileName || getDisplayName(file) || 'NO NAME'}
+                            </span>
+                            <div className="file-actions">
+                              <Button variant="ghost" size="icon" onClick={() => handleDownload(file)} title="Download">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }} title="Rename">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" /></svg>
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(file)} title="Delete">
+                                <Trash className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between w-full">
+                            <div className="text-left w-full overflow-hidden pr-3">
+                              <span className="file-name-inline" aria-label={file.displayName || file.fileName || getDisplayName(file)} title={file.displayName || file.fileName || getDisplayName(file)}>
+                                {file.displayName || file.fileName || getDisplayName(file) || 'NO NAME'}
+                              </span>
+                              <p className="text-xs text-muted-foreground mt-0.5">{file.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}</p>
+                            </div>
+                            <div className="file-actions">
+                              <Button variant="ghost" size="icon" onClick={() => handleDownload(file)} title="Download">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }} title="Rename">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" /></svg>
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(file)} title="Delete">
+                                <Trash className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -344,29 +587,7 @@ export default function AdminContentPage() {
                   <p>This folder is empty. (v2.Fix)</p>
 
                   <Button variant="link" onClick={() => setShowNewFolderModal(true)} className="mt-2">Create a new folder</Button>
-                  <Button variant="outline" size="sm" className="mt-4 border-dashed" onClick={async () => {
-                    try {
-                      const { collection, addDoc } = await import("firebase/firestore");
-                      const { db } = await import("@/lib/firebase");
-                      await addDoc(collection(db, "learnflow_content"), {
-                        courseId: selectedCourse.id.toString(),
-                        batchId: selectedBatch.id.toString(),
-                        folderId: currentFolderId,
-                        fileName: "Connectivity_Test_File",
-                        fileType: "debug",
-                        storagePath: "debug",
-                        downloadUrl: "#",
-                        createdAt: new Date()
-                      });
-                      alert("Test File Written! The connection IS working. The list should update.");
-                      // Trigger refresh
-                      setCurrentFolderId(currentFolderId);
-                    } catch (e: any) {
-                      alert("Connection Failed: " + e.message);
-                    }
-                  }}>
-                    Diagnose: Write Test File
-                  </Button>
+                  {/* debug button removed */}
                 </div>
               )}
             </div>
@@ -395,6 +616,57 @@ export default function AdminContentPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Rename Modal */}
+      <Dialog open={showRenameModal} onOpenChange={setShowRenameModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+            <DialogDescription>Update the file's display name (metadata only).</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input value={renameValue} onChange={e => setRenameValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmRename()} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameModal(false)}>Cancel</Button>
+            <Button onClick={() => confirmRename()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Batch Rename Modal */}
+      <Dialog open={showBatchRenameModal} onOpenChange={setShowBatchRenameModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Batch</DialogTitle>
+            <DialogDescription>Update the batch name.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input value={batchRenameValue} onChange={e => setBatchRenameValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmBatchRename()} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchRenameModal(false)}>Cancel</Button>
+            <Button onClick={() => confirmBatchRename()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Folder Rename Modal */}
+      <Dialog open={showFolderRenameModal} onOpenChange={setShowFolderRenameModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Folder</DialogTitle>
+            <DialogDescription>Update the folder name.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input value={folderRenameValue} onChange={e => setFolderRenameValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmFolderRename()} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFolderRenameModal(false)}>Cancel</Button>
+            <Button onClick={() => confirmFolderRename()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename removed - admin shows original filename only */}
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
         <DialogContent>
@@ -405,32 +677,9 @@ export default function AdminContentPage() {
           <FileUpload onUploadComplete={handleUploadComplete} folderPath={`courses/${selectedCourse?.id}/batches/${selectedBatch?.id}`} />
         </DialogContent>
       </Dialog>
-      {/* Debug Panel - Toggle with Ctrl+Shift+D or always visible for now */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 text-white p-2 text-xs font-mono z-50 overflow-auto max-h-32">
-        <div className="flex gap-4">
-          <div>
-            <strong>Context:</strong><br />
-            CourseID: {selectedCourse?.id ?? "None"} (Type: {typeof selectedCourse?.id})<br />
-            BatchID: {selectedBatch?.id ?? "None"} (Type: {typeof selectedBatch?.id})<br />
-            FolderID: {currentFolderId ?? "Root(null)"} (Type: {typeof currentFolderId})<br />
-            User: {user ? "Logged In" : "Guest"}<br />
-            Last Fetch: {lastFetchTime}<br />
-            Files Loaded: {files.length}
-          </div>
-          <div>
-            <strong>Loaded Files:</strong><br />
-            {files.length === 0 ? "No files loaded from DB" : files.slice(0, 5).map(f => (
-              <div key={f.id} className="whitespace-nowrap">{f.fileName}</div>
-            ))}
-          </div>
-          <div className="ml-auto">
-            <Button variant="secondary" size="sm" onClick={() => {
-              // Force Reload
-              window.location.reload();
-            }}>Hard Reload</Button>
-          </div>
-        </div>
-      </div>
+      {/* Debug footer removed */}
+      {/* Raw Docs Debug Panel */}
+      {/* debug panel removed */}
     </div>
   );
 }

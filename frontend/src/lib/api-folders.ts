@@ -15,14 +15,16 @@ export async function getFolders(batchId: number) {
 }
 
 export async function deleteFolder(folderId: number) {
-  const res = await fetch(`http://localhost:8081/api/folders/${folderId}`, {
+  // Backend exposes folder delete at /api/batches/folders/{folderId}
+  const res = await fetch(`http://localhost:8081/api/batches/folders/${folderId}`, {
     method: "DELETE",
   });
   return res.json();
 }
 
 export async function updateFolder(folderId: number, name: string) {
-  const res = await fetch(`http://localhost:8081/api/folders/${folderId}`, {
+  // Backend exposes folder update at /api/batches/folders/{folderId}
+  const res = await fetch(`http://localhost:8081/api/batches/folders/${folderId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),

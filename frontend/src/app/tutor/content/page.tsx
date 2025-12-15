@@ -5,10 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search, MoreVertical, File } from "lucide-react";
+import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search, MoreVertical, File, Edit2 } from "lucide-react";
 import { getCourses, getBatches } from "@/lib/api-courses";
 import { getFolders, createFolder, deleteFolder, updateFolder } from "@/lib/api-folders";
-import { getFiles, uploadFile } from "@/lib/api-files";
+import { getFiles, uploadFile, saveFileMetadata, updateFileName } from "@/lib/api-files";
+import { storage, auth } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { signInAnonymously } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TutorContentPage() {
@@ -32,6 +35,15 @@ export default function TutorContentPage() {
   const [newFolderName, setNewFolderName] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Folder rename state for tutors
+  const [showFolderRenameModal, setShowFolderRenameModal] = useState(false);
+  const [folderRenameTarget, setFolderRenameTarget] = useState<any | null>(null);
+  const [folderRenameValue, setFolderRenameValue] = useState<string>("");
+
+  // File rename state for tutors
+  const [showFileRenameModal, setShowFileRenameModal] = useState(false);
+  const [fileRenameTarget, setFileRenameTarget] = useState<any | null>(null);
+  const [fileRenameValue, setFileRenameValue] = useState<string>("");
 
   // Fetch Courses
   useEffect(() => {
@@ -63,21 +75,56 @@ export default function TutorContentPage() {
     }
   }, [selectedBatch]);
 
+  const confirmTutorFolderRename = async () => {
+    if (!folderRenameTarget || !folderRenameTarget.id) return;
+    try {
+      await updateFolder(folderRenameTarget.id, folderRenameValue);
+      toast({ title: "Folder renamed", description: "Folder name updated." });
+      setShowFolderRenameModal(false);
+      if (selectedBatch) {
+        const data = await getFolders(selectedBatch.id);
+        setFolders(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Rename Failed", description: (e as any).message || String(e), variant: "destructive" });
+    }
+  };
+
+  const confirmTutorFileRename = async () => {
+    if (!fileRenameTarget || !fileRenameTarget.id) return;
+    try {
+      await updateFileName(fileRenameTarget.id, fileRenameValue);
+      toast({ title: "File renamed", description: "File name updated." });
+      setShowFileRenameModal(false);
+      if (selectedBatch && selectedCourse) {
+        const data = await getFiles(String(selectedCourse.id), String(selectedBatch.id), currentFolderId === null ? null : currentFolderId);
+        setFiles(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Rename Failed", description: (e as any).message || String(e), variant: "destructive" });
+    }
+  };
+
   // Fetch Files (Lazy load for current folder)
   useEffect(() => {
-    if (selectedBatch) {
-      // If currentFolderId is null (Home), and we assume Home CANNOT have files (only folders), we skip.
-      // But if we want files in root, we need to handle it.
-      // Our api-files.ts uses folderId in URL. If null, URL is `/files`? Backend maps `/folders/{id}/files`.
-      // So fetching files for Root (null id) might fail unless we implement `/api/batches/folders/root/files` or similar.
-      // For now, let's assume specific folders only content. Or handle Logic:
-      if (currentFolderId) {
-        getFiles(currentFolderId).then((data) => setFiles(Array.isArray(data) ? data : []));
-      } else {
-        setFiles([]); // Clear files at root for now
-      }
+    if (selectedBatch && selectedCourse) {
+      const cId = String(selectedCourse.id);
+      const bId = String(selectedBatch.id);
+      const folderParam = currentFolderId === null ? null : currentFolderId;
+
+      // Call getFiles with courseId, batchId and folderId so Firestore filtering works
+      getFiles(cId, bId, folderParam)
+        .then((data) => setFiles(Array.isArray(data) ? data : []))
+        .catch((err) => {
+          console.error("Error loading files:", err);
+          setFiles([]);
+        });
+    } else {
+      setFiles([]);
     }
-  }, [selectedBatch, currentFolderId]);
+  }, [selectedCourse, selectedBatch, currentFolderId]);
 
   const handleFolderClick = (folder: any) => {
     setCurrentFolderId(folder.id);
@@ -95,7 +142,10 @@ export default function TutorContentPage() {
   );
 
   const filteredFolders = currentLevelFolders.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredFiles = files.filter(f => f.data?.originalName?.toLowerCase().includes(searchQuery.toLowerCase()) || f.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredFiles = files.filter(f => {
+    const name = (f.title || f.fileName || f.name || (f.data && f.data.originalName) || "").toString().toLowerCase();
+    return name.includes(searchQuery.toLowerCase());
+  });
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim() || !selectedBatch) return;
@@ -115,21 +165,53 @@ export default function TutorContentPage() {
 
   const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedBatch) return;
+    if (!file || !selectedBatch || !selectedCourse) return;
 
     try {
-      // Need courseId (from selectedCourse)
-      await uploadFile(file, selectedCourse.id.toString(), currentFolderId || undefined);
-      // Refresh files
-      if (currentFolderId) {
-        const data = await getFiles(currentFolderId);
-        setFiles(Array.isArray(data) ? data : []);
+      // Ensure anonymous auth so Storage rules allow upload if configured
+      if (!auth.currentUser) {
+        await signInAnonymously(auth);
       }
-      setShowUploadModal(false);
+
+      const cId = String(selectedCourse.id);
+      const bId = String(selectedBatch.id);
+      const fileName = `${Date.now()}_${file.name}`;
+      const storagePath = `courses/${cId}/batches/${bId}/${fileName}`;
+
+      const storageRef = ref(storage, storagePath);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          () => {},
+          (err) => reject(err),
+          () => resolve()
+        );
+      });
+
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+
+      // Save metadata to Firestore so files appear in lists
+      await saveFileMetadata({
+        courseId: cId,
+        batchId: bId,
+        folderId: currentFolderId ?? null,
+        fileName: file.name,
+        fileType: file.type,
+        storagePath,
+        downloadUrl
+      });
+
+      // Refresh files list
+      const data = await getFiles(cId, bId, currentFolderId === null ? null : currentFolderId).catch(() => []);
+      setFiles(Array.isArray(data) ? data : []);
+
       setShowUploadModal(false);
       toast({ title: "File uploaded", variant: "default" });
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to upload file", variant: "destructive" });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Error", description: e?.message || "Failed to upload file", variant: "destructive" });
     }
   };
 
@@ -256,7 +338,14 @@ export default function TutorContentPage() {
                         <div className={`p-2 rounded-full bg-yellow-100 text-yellow-600 ${viewMode === 'list' && 'shrink-0'}`}>
                           <Folder className={viewMode === 'grid' ? "w-8 h-8 fill-current" : "w-5 h-5 fill-current"} />
                         </div>
-                        <span className="text-sm font-medium truncate w-full">{folder.name}</span>
+                        <div className="flex items-center w-full justify-between">
+                          <span className="text-sm font-medium truncate">{folder.name}</span>
+                          <div className="flex items-center gap-1 ml-3">
+                            <Button variant="ghost" size="icon" title="Rename folder" onClick={() => { setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -267,19 +356,40 @@ export default function TutorContentPage() {
               {filteredFiles.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-3">Files</h3>
-                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" : "flex flex-col gap-1"}>
+
+                  <div className={viewMode === 'grid' ? 'file-grid' : 'flex flex-col gap-1'}>
                     {filteredFiles.map(file => (
-                      <div
-                        key={file.id}
-                        className={`group flex items-center gap-3 p-3 rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:bg-accent/50 hover:shadow-md ${viewMode === 'grid' ? 'flex-col justify-center text-center py-6 h-32' : ''}`}
-                      >
-                        <div className={`p-2 rounded-full bg-blue-100 text-blue-600 ${viewMode === 'list' && 'shrink-0'}`}>
+                      <div key={file.id} className={`file-card ${viewMode === 'grid' ? 'grid' : 'list'}`}>
+                        <div className="file-icon">
                           <FileText className={viewMode === 'grid' ? "w-8 h-8" : "w-5 h-5"} />
                         </div>
-                        <div className="text-left w-full overflow-hidden">
-                          <p className={`text-sm font-medium truncate ${viewMode === 'grid' && 'text-center'}`}>{file.title || file.name || "Untitled"}</p>
-                          {viewMode === 'list' && <p className="text-xs text-muted-foreground mt-0.5">{new Date(file.createdAt).toLocaleDateString()}</p>}
-                        </div>
+
+                        {viewMode === 'grid' ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="file-name-badge" aria-label={file.title || file.fileName || file.name} title={file.title || file.fileName || file.name}>
+                              {file.title || file.fileName || file.name || 'Untitled'}
+                            </span>
+                            <div className="file-actions">
+                              <Button variant="ghost" size="icon" onClick={() => { setFileRenameTarget(file); setFileRenameValue(file.title || file.fileName || file.name || ''); setShowFileRenameModal(true); }} title="Rename">
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between w-full">
+                            <div className="text-left w-full overflow-hidden pr-3">
+                              <span className="file-name-inline" aria-label={file.title || file.fileName || file.name} title={file.title || file.fileName || file.name}>
+                                {file.title || file.fileName || file.name || 'Untitled'}
+                              </span>
+                              <p className="text-xs text-muted-foreground mt-0.5">{file.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}</p>
+                            </div>
+                            <div className="file-actions">
+                              <Button variant="ghost" size="icon" onClick={() => { setFileRenameTarget(file); setFileRenameValue(file.title || file.fileName || file.name || ''); setShowFileRenameModal(true); }} title="Rename">
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -318,6 +428,38 @@ export default function TutorContentPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewFolderModal(false)}>Cancel</Button>
             <Button onClick={handleCreateFolder}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Folder Rename Modal for Tutors */}
+      <Dialog open={showFolderRenameModal} onOpenChange={setShowFolderRenameModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Folder</DialogTitle>
+            <DialogDescription>Update the folder name.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input value={folderRenameValue} onChange={e => setFolderRenameValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmTutorFolderRename()} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFolderRenameModal(false)}>Cancel</Button>
+            <Button onClick={() => confirmTutorFolderRename()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* File Rename Modal for Tutors */}
+      <Dialog open={showFileRenameModal} onOpenChange={setShowFileRenameModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+            <DialogDescription>Update the file's displayed name.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input value={fileRenameValue} onChange={e => setFileRenameValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && confirmTutorFileRename()} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFileRenameModal(false)}>Cancel</Button>
+            <Button onClick={() => confirmTutorFileRename()}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 
 interface FileUploadProps {
-    onUploadComplete: (url: string, fileType: string, fileName: string) => void;
+    // Now also return the actual storagePath used so callers can persist the exact path
+    onUploadComplete: (url: string, fileType: string, fileName: string, storagePath: string, size?: number, duration?: number | null) => void;
     folderPath?: string; // Optional folder path in storage
 }
 
@@ -45,7 +46,8 @@ export function FileUpload({ onUploadComplete, folderPath = "uploads" }: FileUpl
             }
         }
 
-        const storageRef = ref(storage, `${folderPath}/${Date.now()}_${file.name}`);
+    const storagePath = `${folderPath}/${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, storagePath);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         uploadTask.on(
@@ -56,16 +58,45 @@ export function FileUpload({ onUploadComplete, folderPath = "uploads" }: FileUpl
             },
             (error) => {
                 console.error("Upload failed", error);
+                // Try to show richer error info when available
+                const code = (error && error.code) ? error.code : undefined;
+                const serverResponse = (error && (error as any).serverResponse) ? (error as any).serverResponse : undefined;
+                // serverResponse can be string or object
+                const serverMsg = typeof serverResponse === 'string' ? serverResponse : (serverResponse?.error?.message || undefined);
                 toast({
                     title: "Upload Failed",
-                    description: error.message,
+                    description: serverMsg || (error as any).message || String(error),
                     variant: "destructive",
                 });
+                // Also keep a verbose console log for debugging
+                console.error("Upload error details:", { code, serverResponse, error });
                 setUploading(false);
             },
             () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    onUploadComplete(downloadURL, file.type, file.name);
+                getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+                    // Compute size
+                    const size = file.size;
+                    // If it's a video/audio, attempt to read duration
+                    let duration = null;
+                    if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+                        try {
+                            duration = await new Promise<number | null>((resolve) => {
+                                const url = URL.createObjectURL(file);
+                                const media = document.createElement(file.type.startsWith('video/') ? 'video' : 'audio');
+                                media.preload = 'metadata';
+                                media.src = url;
+                                media.onloadedmetadata = () => {
+                                    URL.revokeObjectURL(url);
+                                    resolve(media.duration || null);
+                                };
+                                media.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+                            });
+                        } catch (e) {
+                            duration = null;
+                        }
+                    }
+
+                    onUploadComplete(downloadURL, file.type, file.name, storagePath, size, duration);
                     setUploading(false);
                     setFile(null);
                     setProgress(0);

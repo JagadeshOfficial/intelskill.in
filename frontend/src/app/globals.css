@@ -118,3 +118,53 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* File card UI components - used by admin/tutor content pages */
+@layer components {
+  .file-grid {
+    @apply grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4;
+  }
+
+  .file-card {
+    /* 'group' cannot be used with @apply; apply the other utilities directly */
+    @apply flex flex-col items-center gap-3 p-4 rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md hover:bg-accent/50 cursor-pointer;
+    min-height: 8rem;
+  }
+
+  .file-card.list {
+    @apply flex-row items-center justify-between h-auto py-3;
+  }
+
+  .file-icon {
+    @apply p-3 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .file-name-badge {
+    /* use the muted background so the badge contrasts nicely in both light and dark themes */
+    @apply inline-block bg-muted/10 text-card-foreground px-3 py-1 rounded-md text-xs font-medium truncate max-w-full;
+  }
+
+  .file-name-inline {
+    /* use card foreground for consistency and better contrast */
+    @apply text-sm font-medium truncate text-card-foreground;
+  }
+
+  .file-actions {
+    @apply flex items-center gap-2;
+  }
+
+  /* When in grid mode, push actions below the name and center them */
+  .file-card.grid .file-actions {
+    @apply mt-3;
+  }
+
+  /* Small screen tweaks */
+  @media (max-width: 640px) {
+    .file-grid {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+    .file-card { @apply p-3; }
+  }
+}

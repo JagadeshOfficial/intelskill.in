@@ -28,6 +28,24 @@ export async function createBatch(courseId: string | number, batch: { name: stri
   return res.json();
 }
 
+// Delete a batch
+export async function deleteBatch(courseId: string | number, batchId: string | number): Promise<any> {
+  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}
+
+// Update (rename) a batch
+export async function updateBatch(courseId: string | number, batchId: string | number, updated: { name?: string }): Promise<any> {
+  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updated),
+  });
+  return res.json();
+}
+
 export async function addStudentToBatch(courseId: string | number, batchId: string | number, email: string): Promise<any> {
   const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}/students`, {
     method: "POST",
