@@ -98,7 +98,7 @@ export default function AdminContentPage() {
       setFolderPath([{ id: null, name: 'Home' }]);
       // Eagerly fetch root files
       if (selectedCourse) {
-  getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), null).then(data => debugSetFiles(data));
+        getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), null).then(data => debugSetFiles(data));
       }
     }
   }, [selectedBatch]);
@@ -126,7 +126,7 @@ export default function AdminContentPage() {
           }
           console.log("Fetched files:", data.length);
           // If no files found for the specific folder, fall back to returning all batch files
-              if (Array.isArray(data) && data.length === 0) {
+          if (Array.isArray(data) && data.length === 0) {
             try {
               const all = await getFiles(cId, bId, 'ANY');
               console.log("Fallback: fetched all batch files:", all.length);
@@ -172,7 +172,7 @@ export default function AdminContentPage() {
     try {
       if (selectedBatch) {
         // Force refresh files too to ensure they are visible
-  getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).then(f => debugSetFiles(f));
+        getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).then(f => debugSetFiles(f));
       }
       await createFolder(selectedBatch.id, newFolderName, currentFolderId);
       // Refresh folders
@@ -234,7 +234,7 @@ export default function AdminContentPage() {
       // Refresh files list
       const data = await getFiles(cId, bId, currentFolderId)
         .catch(e => { console.error(e); return []; });
-  debugSetFiles(data);
+      debugSetFiles(data);
 
     } catch (e) {
       console.error(e);
@@ -265,8 +265,8 @@ export default function AdminContentPage() {
       if (file.id) await deleteFileMetadata(file.id);
       toast({ title: "Deleted", description: "File removed." });
       // Refresh list
-  const data = await getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).catch(() => []);
-  debugSetFiles(data);
+      const data = await getFiles(selectedCourse.id.toString(), selectedBatch.id.toString(), currentFolderId).catch(() => []);
+      debugSetFiles(data);
     } catch (e) {
       console.error(e);
       toast({ title: "Delete Failed", description: (e as any).message || String(e), variant: "destructive" });
@@ -479,42 +479,90 @@ export default function AdminContentPage() {
             <div className="flex-1 overflow-y-auto">
               {/* Folders */}
               {filteredFolders.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Folders</h3>
-                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" : "flex flex-col gap-1"}>
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 px-1">Folders</h3>
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" : "flex flex-col gap-2"}>
                     {filteredFolders.map(folder => (
                       <div
                         key={folder.id}
-                        className={`group flex items-center gap-3 p-3 rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:bg-accent/50 hover:shadow-md ${viewMode === 'grid' ? 'flex-col justify-center text-center py-6 h-32' : ''}`}
+                        className={`group relative rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden ${viewMode === 'grid'
+                            ? 'aspect-[4/3] flex flex-col p-4'
+                            : 'flex items-center p-3 gap-4'
+                          }`}
                         onDoubleClick={() => handleFolderClick(folder)}
                       >
-                        <div className={`p-2 rounded-full bg-yellow-100 text-yellow-600 ${viewMode === 'list' && 'shrink-0'}`}>
-                          <Folder className={viewMode === 'grid' ? "w-8 h-8 fill-current" : "w-5 h-5 fill-current"} />
-                        </div>
-                        <div className="flex items-center w-full justify-between">
-                          <span className="text-sm font-medium truncate">{folder.name}</span>
-                          <div className="flex items-center gap-1 ml-3">
-                            <Button variant="ghost" size="icon" title="Rename folder" onClick={() => { setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" title="Delete folder" onClick={async () => {
-                              if (!confirm(`Delete folder "${folder.name}"? This will remove the folder and its contents.`)) return;
-                              try {
-                                await deleteFolder(folder.id);
-                                toast({ title: "Folder deleted", description: "Folder removed." });
-                                if (selectedBatch) {
-                                  const data = await getFolders(selectedBatch.id);
-                                  setFolders(Array.isArray(data) ? data : []);
-                                }
-                              } catch (e) {
-                                console.error(e);
-                                toast({ title: "Delete Failed", description: (e as any).message || String(e), variant: "destructive" });
-                              }
-                            }}>
-                              <Trash className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
+                        {viewMode === 'grid' ? (
+                          <>
+                            {/* Grid View Content */}
+                            <div className="flex justify-between items-start">
+                              <div className="p-2.5 bg-amber-100/50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-500">
+                                <Folder className="w-8 h-8 fill-current" />
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity -mr-2 -mt-2">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
+                                    <Edit2 className="w-4 h-4 mr-2" /> Rename
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => {
+                                    e.stopPropagation();
+                                    const confirmDelete = async () => {
+                                      if (!confirm(`Delete folder "${folder.name}"? This will remove the folder and its contents.`)) return;
+                                      try {
+                                        await deleteFolder(folder.id);
+                                        toast({ title: "Folder deleted", description: "Folder removed." });
+                                        if (selectedBatch) {
+                                          const data = await getFolders(selectedBatch.id);
+                                          setFolders(Array.isArray(data) ? data : []);
+                                        }
+                                      } catch (err) {
+                                        console.error(err);
+                                        toast({ title: "Delete Failed", description: "Could not delete folder.", variant: "destructive" });
+                                      }
+                                    };
+                                    confirmDelete();
+                                  }}>
+                                    <Trash className="w-4 h-4 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <div className="mt-auto pt-4">
+                              <h4 className="font-semibold text-sm truncate" title={folder.name}>{folder.name}</h4>
+                              <p className="text-xs text-muted-foreground mt-1">Folder</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* List View Content */}
+                            <div className="p-2 bg-amber-100/50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-500 shrink-0">
+                              <Folder className="w-5 h-5 fill-current" />
+                            </div>
+                            <span className="text-sm font-medium truncate flex-1">{folder.name}</span>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => {
+                                e.stopPropagation();
+                                const confirmDelete = async () => {
+                                  if (!confirm(`Delete folder "${folder.name}"?`)) return;
+                                  try {
+                                    await deleteFolder(folder.id);
+                                    if (selectedBatch) { const data = await getFolders(selectedBatch.id); setFolders(Array.isArray(data) ? data : []); }
+                                  } catch (err) { toast({ title: "Error", description: "Failed", variant: "destructive" }); }
+                                };
+                                confirmDelete();
+                              }}>
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -524,54 +572,78 @@ export default function AdminContentPage() {
               {/* Files */}
               {filteredFiles.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-muted-foreground">Files</h3>
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <h3 className="text-lg font-semibold text-foreground">Files</h3>
                   </div>
 
-                  <div className={viewMode === 'grid' ? 'file-grid' : 'flex flex-col ga p-1'}>
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" : "flex flex-col gap-2"}>
                     {filteredFiles.map(file => (
-                      <div key={file.id} className={`file-card ${viewMode === 'grid' ? 'grid' : 'list'}`}>
-                        <div className="file-icon">
-                          <FileText className={viewMode === 'grid' ? "w-8 h-8" : "w-5 h-5"} />
-                        </div>
+                      <div key={file.id} className={`group relative rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${viewMode === 'grid'
+                          ? 'aspect-[4/3] flex flex-col p-4'
+                          : 'flex items-center p-3 gap-4'
+                        }`}>
 
                         {viewMode === 'grid' ? (
-                          <div className="flex flex-col items-center gap-2">
-                            <span className="file-name-badge" aria-label={file.displayName || file.fileName || getDisplayName(file)} title={file.displayName || file.fileName || getDisplayName(file)}>
-                              {file.displayName || file.fileName || getDisplayName(file) || 'NO NAME'}
-                            </span>
-                            <div className="file-actions">
-                              <Button variant="ghost" size="icon" onClick={() => handleDownload(file)} title="Download">
-                                <Download className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }} title="Rename">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" /></svg>
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(file)} title="Delete">
-                                <Trash className="w-4 h-4 text-destructive" />
-                              </Button>
+                          <>
+                            {/* Grid View Content */}
+                            <div className="flex justify-between items-start z-10">
+                              <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+                                <FileText className="w-8 h-8" />
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity -mr-2 -mt-2">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleDownload(file)}>
+                                    <Download className="w-4 h-4 mr-2" /> Download
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }}>
+                                    <Edit2 className="w-4 h-4 mr-2" /> Rename
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(file)}>
+                                    <Trash className="w-4 h-4 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                          </div>
+
+                            <div className="mt-auto pt-4 relative z-0">
+                              <h4 className="font-semibold text-sm truncate" title={file.displayName || file.fileName || getDisplayName(file)}>
+                                {file.displayName || file.fileName || getDisplayName(file) || 'Untitled'}
+                              </h4>
+                              <p className="text-xs text-muted-foreground mt-1 truncate">
+                                {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'File'}
+                              </p>
+                            </div>
+                          </>
                         ) : (
-                          <div className="flex items-center justify-between w-full">
-                            <div className="text-left w-full overflow-hidden pr-3">
-                              <span className="file-name-inline" aria-label={file.displayName || file.fileName || getDisplayName(file)} title={file.displayName || file.fileName || getDisplayName(file)}>
-                                {file.displayName || file.fileName || getDisplayName(file) || 'NO NAME'}
-                              </span>
-                              <p className="text-xs text-muted-foreground mt-0.5">{file.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}</p>
+                          <>
+                            {/* List View Content */}
+                            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                              <FileText className="w-5 h-5" />
                             </div>
-                            <div className="file-actions">
-                              <Button variant="ghost" size="icon" onClick={() => handleDownload(file)} title="Download">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium truncate" title={file.displayName || getDisplayName(file)}>
+                                {file.displayName || getDisplayName(file) || 'Untitled'}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">{file.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}</p>
+                            </div>
+
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(file)} title="Download">
                                 <Download className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }} title="Rename">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" /></svg>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || getDisplayName(file)); setShowRenameModal(true); }} title="Rename">
+                                <Edit2 className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(file)} title="Delete">
-                                <Trash className="w-4 h-4 text-destructive" />
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(file)} title="Delete">
+                                <Trash className="w-4 h-4" />
                               </Button>
                             </div>
-                          </div>
+                          </>
                         )}
                       </div>
                     ))}
