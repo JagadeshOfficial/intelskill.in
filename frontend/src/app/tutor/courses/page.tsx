@@ -40,15 +40,20 @@ export default function TutorCoursesPage() {
     const storedTutorId = localStorage.getItem('tutorId');
     if (storedTutorId) {
       setTutorId(storedTutorId);
+    } else {
+      // Optional: Redirect to login if no tutor ID found
+      // router.push('/login/tutor'); 
     }
   }, []);
 
   // Fetch courses from backend when tutorId is available
   useEffect(() => {
-    fetch('http://localhost:8081/api/courses')
-      .then(res => res.json())
-      .then(data => setTutorCourses(Array.isArray(data) ? data : []));
-  }, []);
+    if (tutorId) {
+      fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`)
+        .then(res => res.json())
+        .then(data => setTutorCourses(Array.isArray(data) ? data : []));
+    }
+  }, [tutorId]);
 
 
   // Fetch batches for manage batches modal

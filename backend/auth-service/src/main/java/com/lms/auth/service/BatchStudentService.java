@@ -1,6 +1,5 @@
 package com.lms.auth.service;
 
-import com.lms.auth.entity.Batch;
 import com.lms.auth.entity.Student;
 import com.lms.auth.repository.BatchRepository;
 import org.springframework.beans.factory.annotation.Autowired;

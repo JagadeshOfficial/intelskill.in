@@ -7,6 +7,7 @@ C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\AdminRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\StudentAuthController.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\BatchRepository.java
+C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\TutorApplicationController.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\Course.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\Tutor.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\dto\OtpRequest.java
@@ -25,8 +26,10 @@ C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\TutorContentRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\AuthServiceApplication.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\service\StudentService.java
+C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\TutorApplication.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\dto\AdminLoginRequest.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\NotificationRepository.java
+C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\TutorApplicationRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\Admin.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\TutorContent.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\Batch.java

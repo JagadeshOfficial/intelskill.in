@@ -58,8 +58,13 @@ public class Tutor {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "tutor_courses", joinColumns = @JoinColumn(name = "tutor_id"), inverseJoinColumns = @JoinColumn(name = "course_id"))
+    private java.util.Set<Course> courses = new java.util.HashSet<>();
+
     // Constructors
-    public Tutor() {}
+    public Tutor() {
+    }
 
     public Tutor(String email, String password, String firstName, String lastName, String phoneNumber) {
         this.email = email;
@@ -204,5 +209,13 @@ public class Tutor {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public java.util.Set<Course> getCourses() {
+        return courses;
+    }
+
+    public void setCourses(java.util.Set<Course> courses) {
+        this.courses = courses;
     }
 }

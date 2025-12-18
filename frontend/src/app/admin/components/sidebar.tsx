@@ -21,7 +21,7 @@ const navLinks = [
   { href: '/admin/admins', label: 'Admins', icon: UserCog },
   { href: '/admin/courses', label: 'Courses', icon: GraduationCap },
   { href: '/admin/content', label: 'Content', icon: BookOpen },
-  { href: '/admin/tutor-applications', label: 'Tutor Apps', icon: ShieldCheck },
+  { href: '/admin/tutor-applications', label: 'Tutor Applications', icon: ShieldCheck },
 ]
 
 export function Sidebar() {

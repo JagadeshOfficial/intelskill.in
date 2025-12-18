@@ -2,9 +2,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search, Download, Trash, MoreHorizontal, Edit2 } from "lucide-react";
+import { Folder, FileText, Upload, Plus, ChevronRight, Home, Grid, List, Search, Download, Trash, MoreHorizontal, Edit2, Play, Image as ImageIcon, File, X } from "lucide-react";
 import { getBatches, deleteBatch, updateBatch } from "@/lib/api-courses";
 import { getFolders, createFolder, deleteFolder, updateFolder } from "@/lib/api-folders";
 import { getFiles, uploadFile, saveFileMetadata } from "@/lib/api-files";
@@ -50,7 +50,10 @@ export default function AdminContentPage() {
   const [folderRenameTarget, setFolderRenameTarget] = useState<any | null>(null);
   const [folderRenameValue, setFolderRenameValue] = useState<string>("");
   const [showFolderRenameModal, setShowFolderRenameModal] = useState(false);
-  // removed rename state - admin will display original filenames only
+
+  // File Preview State
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewFile, setPreviewFile] = useState<any | null>(null);
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -166,6 +169,11 @@ export default function AdminContentPage() {
     const name = (f.displayName || f.title || f.fileName || "Untitled");
     return String(name).toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const handleFileClick = (file: any) => {
+    setPreviewFile(file);
+    setShowPreviewModal(true);
+  };
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim() || !selectedBatch) return;
@@ -385,17 +393,21 @@ export default function AdminContentPage() {
                     </Button>
                     <Button variant="ghost" size="icon" title="Delete batch" onClick={async () => {
                       if (!selectedCourse) return;
+                      // Optimistic confirmation
                       if (!confirm(`Delete batch "${batch.name}"? This will remove the batch and its content.`)) return;
                       try {
-                        await deleteBatch(selectedCourse.id, batch.id);
-                        toast({ title: "Batch deleted", description: "Batch removed." });
+                        const res = await deleteBatch(selectedCourse.id, batch.id);
+                        if (res && res.success === false) {
+                          throw new Error(res.message || "Failed to delete batch");
+                        }
+                        toast({ title: "Batch deleted", description: "Batch removed successfully." });
                         const data = await getBatches(selectedCourse.id);
                         setBatches(Array.isArray(data) ? data : []);
                         // Clear selection if it was the deleted batch
                         if (selectedBatch?.id === batch.id) setSelectedBatch(null);
-                      } catch (e) {
+                      } catch (e: any) {
                         console.error(e);
-                        toast({ title: "Delete Failed", description: (e as any).message || String(e), variant: "destructive" });
+                        toast({ title: "Delete Failed", description: e.message || String(e), variant: "destructive" });
                       }
                     }}>
                       <Trash className="w-4 h-4 text-destructive" />
@@ -479,75 +491,84 @@ export default function AdminContentPage() {
             <div className="flex-1 overflow-y-auto">
               {/* Folders */}
               {filteredFolders.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-foreground mb-4 px-1">Folders</h3>
-                  <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" : "flex flex-col gap-2"}>
+                <div className="mb-10">
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <h3 className="text-xl font-bold tracking-tight text-foreground">Folders</h3>
+                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{filteredFolders.length} Folders</span>
+                  </div>
+
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6" : "flex flex-col gap-3"}>
                     {filteredFolders.map(folder => (
                       <div
                         key={folder.id}
-                        className={`group relative rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden ${viewMode === 'grid'
-                            ? 'aspect-[4/3] flex flex-col p-4'
-                            : 'flex items-center p-3 gap-4'
+                        className={`group relative rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden ${viewMode === 'grid'
+                          ? 'aspect-[5/4] flex flex-col hover:-translate-y-1'
+                          : 'flex items-center p-4 hover:border-primary/50'
                           }`}
                         onDoubleClick={() => handleFolderClick(folder)}
                       >
+                        {/* Selection/Action Overlay (Grid) */}
+                        {viewMode === 'grid' && (
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full shadow-sm bg-white/90 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80 backdrop-blur-sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
+                                  <Edit2 className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => {
+                                  e.stopPropagation();
+                                  const confirmDelete = async () => {
+                                    if (!confirm(`Delete folder "${folder.name}"? This will remove the folder and its contents.`)) return;
+                                    try {
+                                      await deleteFolder(folder.id);
+                                      toast({ title: "Folder deleted", description: "Folder removed." });
+                                      if (selectedBatch) {
+                                        const data = await getFolders(selectedBatch.id);
+                                        setFolders(Array.isArray(data) ? data : []);
+                                      }
+                                    } catch (err) {
+                                      console.error(err);
+                                      toast({ title: "Delete Failed", description: "Could not delete folder.", variant: "destructive" });
+                                    }
+                                  };
+                                  confirmDelete();
+                                }}>
+                                  <Trash className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
+
                         {viewMode === 'grid' ? (
                           <>
                             {/* Grid View Content */}
-                            <div className="flex justify-between items-start">
-                              <div className="p-2.5 bg-amber-100/50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-500">
-                                <Folder className="w-8 h-8 fill-current" />
-                              </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity -mr-2 -mt-2">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
-                                    <Edit2 className="w-4 h-4 mr-2" /> Rename
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => {
-                                    e.stopPropagation();
-                                    const confirmDelete = async () => {
-                                      if (!confirm(`Delete folder "${folder.name}"? This will remove the folder and its contents.`)) return;
-                                      try {
-                                        await deleteFolder(folder.id);
-                                        toast({ title: "Folder deleted", description: "Folder removed." });
-                                        if (selectedBatch) {
-                                          const data = await getFolders(selectedBatch.id);
-                                          setFolders(Array.isArray(data) ? data : []);
-                                        }
-                                      } catch (err) {
-                                        console.error(err);
-                                        toast({ title: "Delete Failed", description: "Could not delete folder.", variant: "destructive" });
-                                      }
-                                    };
-                                    confirmDelete();
-                                  }}>
-                                    <Trash className="w-4 h-4 mr-2" /> Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                            <div className="flex-1 w-full flex justify-center items-center py-2">
+                              <Folder className="w-16 h-16 fill-amber-400 text-amber-500 drop-shadow-sm transition-transform group-hover:scale-105" />
                             </div>
-                            <div className="mt-auto pt-4">
-                              <h4 className="font-semibold text-sm truncate" title={folder.name}>{folder.name}</h4>
-                              <p className="text-xs text-muted-foreground mt-1">Folder</p>
+
+                            <div className="h-12 border-t bg-muted/20 px-3 flex items-center justify-center">
+                              <h4 className="font-medium text-sm truncate leading-tight text-foreground/90 w-full text-center" title={folder.name}>
+                                {folder.name}
+                              </h4>
                             </div>
                           </>
                         ) : (
                           <>
                             {/* List View Content */}
-                            <div className="p-2 bg-amber-100/50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-500 shrink-0">
-                              <Folder className="w-5 h-5 fill-current" />
-                            </div>
-                            <span className="text-sm font-medium truncate flex-1">{folder.name}</span>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
-                                <Edit2 className="w-4 h-4" />
+                            <Folder className="w-6 h-6 fill-amber-400 text-amber-500 mr-4 shrink-0" />
+                            <span className="text-sm font-medium truncate flex-1 group-hover:text-primary transition-colors">{folder.name}</span>
+
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="sm" className="h-8" onClick={(e) => { e.stopPropagation(); setFolderRenameTarget(folder); setFolderRenameValue(folder.name); setShowFolderRenameModal(true); }}>
+                                <Edit2 className="w-4 h-4 mr-2" /> Rename
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => {
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={(e) => {
                                 e.stopPropagation();
                                 const confirmDelete = async () => {
                                   if (!confirm(`Delete folder "${folder.name}"?`)) return;
@@ -569,79 +590,116 @@ export default function AdminContentPage() {
                 </div>
               )}
 
-              {/* Files */}
-              {filteredFiles.length > 0 && (
+              {/* Files - Only visible when inside a folder */}
+              {filteredFiles.length > 0 && currentFolderId !== null && (
                 <div>
                   <div className="flex items-center justify-between mb-4 px-1">
-                    <h3 className="text-lg font-semibold text-foreground">Files</h3>
+                    <h3 className="text-xl font-bold tracking-tight text-foreground">Files</h3>
+                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{filteredFiles.length} Files</span>
                   </div>
 
-                  <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" : "flex flex-col gap-2"}>
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6" : "flex flex-col gap-3"}>
                     {filteredFiles.map(file => (
-                      <div key={file.id} className={`group relative rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${viewMode === 'grid'
-                          ? 'aspect-[4/3] flex flex-col p-4'
-                          : 'flex items-center p-3 gap-4'
-                        }`}>
+                      <div
+                        key={file.id}
+                        className={`group relative rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer ${viewMode === 'grid'
+                          ? 'aspect-[4/5] flex flex-col hover:-translate-y-1'
+                          : 'flex items-center p-3 hover:bg-muted/30'
+                          }`}
+                        onClick={() => handleFileClick(file)}
+                      >
+
+                        {viewMode === 'grid' && (
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full shadow-sm bg-white/90 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80 backdrop-blur-sm">
+                                  <MoreHorizontal className="w-3 h-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(file); }}>
+                                  <Download className="w-4 h-4 mr-2" /> Download
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }}>
+                                  <Edit2 className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(file); }}>
+                                  <Trash className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
 
                         {viewMode === 'grid' ? (
                           <>
                             {/* Grid View Content */}
-                            <div className="flex justify-between items-start z-10">
-                              <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
-                                <FileText className="w-8 h-8" />
-                              </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity -mr-2 -mt-2">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleDownload(file)}>
-                                    <Download className="w-4 h-4 mr-2" /> Download
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || file.fileName || getDisplayName(file)); setShowRenameModal(true); }}>
-                                    <Edit2 className="w-4 h-4 mr-2" /> Rename
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(file)}>
-                                    <Trash className="w-4 h-4 mr-2" /> Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                            {/* Preview Area - Mimic Google Drive/OS Thumbnail */}
+                            <div className="flex-1 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center relative overflow-hidden group-hover:bg-slate-100 dark:group-hover:bg-slate-900 transition-colors">
+                              {/* If we had real thumbnails, they'd go here. For now, use a large, nice icon */}
+                              {(file.fileType?.includes('image') || file.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? (
+                                <ImageIcon className="w-16 h-16 text-blue-500 opacity-80" />
+                              ) : (file.fileType?.includes('video') || file.fileName?.match(/\.(mp4|webm|mov)$/i)) ? (
+                                <Play className="w-16 h-16 text-red-500 opacity-80 fill-current" />
+                              ) : (file.fileType?.includes('pdf') || file.fileName?.match(/\.pdf$/i)) ? (
+                                <FileText className="w-16 h-16 text-red-600 opacity-80" />
+                              ) : (
+                                <File className="w-16 h-16 text-slate-400 opacity-80" />
+                              )}
                             </div>
 
-                            <div className="mt-auto pt-4 relative z-0">
-                              <h4 className="font-semibold text-sm truncate" title={file.displayName || file.fileName || getDisplayName(file)}>
-                                {file.displayName || file.fileName || getDisplayName(file) || 'Untitled'}
-                              </h4>
-                              <p className="text-xs text-muted-foreground mt-1 truncate">
-                                {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'File'}
-                              </p>
+                            {/* Footer Area - Filename & Icon */}
+                            <div className="h-14 flex items-center gap-3 px-3 bg-card border-t z-10 relative">
+                              <div className="p-1.5 rounded-full bg-blue-50 text-blue-600 shrink-0">
+                                {(file.fileType?.includes('video') || file.fileName?.match(/\.(mp4|webm|mov)$/i)) ? <Play size={14} className="fill-current" /> : <FileText size={14} />}
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-medium text-sm truncate text-foreground/90" title={file.displayName || file.fileName || getDisplayName(file)}>
+                                  {file.displayName || file.fileName || getDisplayName(file) || 'Untitled'}
+                                </h4>
+                                <p className="text-[10px] text-muted-foreground truncate">
+                                  {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : 'Document'}
+                                </p>
+                              </div>
                             </div>
                           </>
                         ) : (
                           <>
                             {/* List View Content */}
-                            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
-                              <FileText className="w-5 h-5" />
+                            <div className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 mr-4">
+                              {(file.fileType?.includes('video') || file.fileName?.match(/\.(mp4|webm|mov)$/i)) ? <Play size={16} className="fill-current" /> : <FileText size={16} />}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium truncate" title={file.displayName || getDisplayName(file)}>
+
+                            <div className="flex-1 min-w-0 mr-4">
+                              <h4 className="text-sm font-medium truncate group-hover:text-primary transition-colors cursor-pointer hover:underline" onClick={() => handleFileClick(file)} title={file.displayName || getDisplayName(file)}>
                                 {file.displayName || getDisplayName(file) || 'Untitled'}
                               </h4>
-                              <p className="text-xs text-muted-foreground">{file.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}</p>
+                            </div>
+
+                            <div className="mr-8 text-xs text-muted-foreground w-24 text-right">
+                              {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : '--'}
                             </div>
 
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(file)} title="Download">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDownload(file); }}>
                                 <Download className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setRenameTarget(file); setRenameValue(file.displayName || getDisplayName(file)); setShowRenameModal(true); }} title="Rename">
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(file)} title="Delete">
-                                <Trash className="w-4 h-4" />
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameTarget(file); setRenameValue(file.displayName || getDisplayName(file)); setShowRenameModal(true); }}>
+                                    <Edit2 className="w-4 h-4 mr-2" /> Rename
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(file); }}>
+                                    <Trash className="w-4 h-4 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </>
                         )}
@@ -749,9 +807,72 @@ export default function AdminContentPage() {
           <FileUpload onUploadComplete={handleUploadComplete} folderPath={`courses/${selectedCourse?.id}/batches/${selectedBatch?.id}`} />
         </DialogContent>
       </Dialog>
-      {/* Debug footer removed */}
-      {/* Raw Docs Debug Panel */}
-      {/* debug panel removed */}
+
+      {/* File Preview Modal */}
+      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+        <DialogContent className="max-w-4xl w-full h-[80vh] flex flex-col p-0 overflow-hidden bg-black/95 border-border/20 backdrop-blur-xl">
+          <DialogTitle className="sr-only">File Preview</DialogTitle>
+          <div className="flex items-center justify-between p-4 border-b border-border/10 bg-black/20 text-white z-10 absolute top-0 w-full hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/10 rounded-full">
+                {(previewFile?.fileType?.includes('video') || previewFile?.fileName?.match(/\.(mp4|webm|mov)$/i)) ? <Play size={18} /> :
+                  (previewFile?.fileType?.includes('image') || previewFile?.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? <ImageIcon size={18} /> :
+                    <FileText size={18} />}
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">{previewFile?.displayName || previewFile?.fileName || 'File Preview'}</h3>
+                <p className="text-xs text-white/50">{previewFile?.fileType || 'Unknown Type'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 rounded-full" onClick={() => previewFile && handleDownload(previewFile)}>
+                <Download className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 rounded-full" onClick={() => setShowPreviewModal(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center p-4 pt-16 bg-zinc-900/50">
+            {previewFile && (
+              <>
+                {/* Video Player */}
+                {(previewFile.fileType?.includes('video') || previewFile.fileName?.match(/\.(mp4|webm|mov)$/i)) && (
+                  <video controls className="max-w-full max-h-[70vh] rounded-lg shadow-2xl w-full aspect-video" src={previewFile.downloadUrl}>
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+
+                {/* Image Viewer */}
+                {(previewFile.fileType?.includes('image') || previewFile.fileName?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previewFile.downloadUrl} alt="Preview" className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-xl" />
+                )}
+
+                {/* PDF Viewer - Basic Iframe */}
+                {(previewFile.fileType?.includes('pdf') || previewFile.fileName?.match(/\.pdf$/i)) && (
+                  <iframe src={previewFile.downloadUrl} className="w-full h-full rounded-lg bg-white border-0 shadow-xl" title="PDF Preview" />
+                )}
+
+                {/* Fallback for other files */}
+                {!(previewFile.fileType?.includes('video') || previewFile.fileName?.match(/\.(mp4|webm|mov)$/i)) &&
+                  !(previewFile.fileType?.includes('image') || previewFile.fileName?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) &&
+                  !(previewFile.fileType?.includes('pdf') || previewFile.fileName?.match(/\.pdf$/i)) && (
+                    <div className="text-center text-zinc-400">
+                      <File className="w-24 h-24 mx-auto mb-6 opacity-20" />
+                      <h3 className="text-xl font-medium text-zinc-200 mb-2">No preview available</h3>
+                      <p className="max-w-md mx-auto mb-8">This file type cannot be previewed directly in the browser.</p>
+                      <Button onClick={() => handleDownload(previewFile)} className="gap-2" size="lg">
+                        <Download className="w-4 h-4" /> Download File
+                      </Button>
+                    </div>
+                  )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

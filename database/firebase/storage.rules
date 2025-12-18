@@ -1,25 +1,21 @@
-// Firebase Storage security rules for LearnFlow
-// Permit authenticated users (including anonymous when enabled) to
-// upload and read files placed under the courses/<course>/batches/<batch>/ path.
-// All other paths are locked down by default.
-
 rules_version = '2';
 
 service firebase.storage {
-	match /b/{bucket}/o {
-		// Allow authenticated users to read and write files inside the
-		// courses/{courseId}/batches/{batchId}/... folder structure.
-		match /courses/{courseId}/batches/{batchId}/{allPaths=**} {
-			allow read: if request.auth != null; // require auth to list/download
-			allow write: if request.auth != null; // require auth to upload/delete
-		}
+  match /b/{bucket}/o {
+    
+    // 1. Allow uploads to the 'resumes' folder for authenticated users (Tutor Applications)
+    match /resumes/{fileName} {
+      allow read, write: if request.auth != null;
+    }
 
-		// You can add additional safe folders below if needed (for tutors, avatars, etc.)
-		// Deny everything else by default.
-		match /{allPaths=**} {
-			allow read: if false;
-			allow write: if false;
-		}
-	}
+    // 2. Existing rule: Allow authenticated users to manage course content
+    match /courses/{courseId}/batches/{batchId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 3. Default: Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
 }
-

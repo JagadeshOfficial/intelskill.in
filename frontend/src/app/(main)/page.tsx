@@ -217,6 +217,49 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Become an Instructor Section */}
+      <section className="py-24 px-6 shrink-0 bg-white relative overflow-hidden">
+        <div className="container mx-auto max-w-7xl">
+          <div className="rounded-[2.5rem] bg-indigo-900 overflow-hidden relative shadow-2xl shadow-indigo-900/20">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 w-2/3 h-full bg-indigo-800/20 skew-x-12 translate-x-1/4"></div>
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px] -translate-x-1/3 translate-y-1/3"></div>
+
+            <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
+              <div className="p-12 lg:p-20 space-y-8">
+                <Badge className="bg-amber-400 text-amber-900 hover:bg-amber-500 border-none px-4 py-1.5 text-sm font-bold uppercase tracking-wider rounded-full">
+                  Join Our Team
+                </Badge>
+                <h2 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
+                  Become an Instructor <br />
+                  <span className="text-indigo-300">Share your impact.</span>
+                </h2>
+                <p className="text-lg text-indigo-100 leading-relaxed max-w-md">
+                  Instructors from around the world teach millions of students on LearnFlow. We provide the tools and skills to teach what you love.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <Button size="lg" className="h-14 px-8 text-lg bg-white text-indigo-900 hover:bg-indigo-50 shadow-xl rounded-full font-bold transition-all hover:scale-105" asChild>
+                    <Link href="/careers">Start Teaching Today</Link>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative h-full min-h-[400px] lg:min-h-full">
+                {/* Abstract/Representative Image Area */}
+                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/90 to-transparent z-10 lg:bg-gradient-to-l"></div>
+                <Image
+                  src="https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+                  alt="Instructor teaching"
+                  fill
+                  className="object-cover object-center lg:object-left"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 px-6 shrink-0 bg-slate-50">
         <div className="container mx-auto max-w-5xl">

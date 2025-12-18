@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow anyone to submit a tutor application
+    match /tutor_applications/{document} {
+      allow create: if true;
+      // Allow admins (authenticated users) to read/update
+      allow read, update: if request.auth != null;
+    }
+
+    // Default rule (from your current settings)
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2026, 1, 14);
+    }
+  }
+}

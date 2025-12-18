@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/courses")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" })
 public class CourseController {
     @Autowired
     private CourseRepository courseRepository;
@@ -21,6 +21,8 @@ public class CourseController {
     private BatchRepository batchRepository;
     @Autowired
     private StudentRepository studentRepository;
+    @Autowired
+    private com.lms.auth.repository.TutorRepository tutorRepository;
 
     @GetMapping
     public List<Course> getAllCourses() {
@@ -53,18 +55,23 @@ public class CourseController {
 
     @GetMapping("/{courseId}/batches")
     public List<Batch> getBatches(@PathVariable Long courseId) {
-        Optional<Course> course = courseRepository.findById(courseId);
-        return course.map(Course::getBatches).orElse(List.of());
+        return batchRepository.findByCourseId(courseId);
     }
 
     @PostMapping("/{courseId}/batches")
-    public Batch createBatch(@PathVariable Long courseId, @RequestBody Batch batch) {
-        Course course = courseRepository.findById(courseId).orElseThrow();
+    public Batch createBatch(@PathVariable Long courseId, @RequestBody java.util.Map<String, String> payload) {
+        String name = payload.get("name");
+        System.out.println("Received request to create batch: " + name + " for course: " + courseId);
+
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new RuntimeException("Course not found"));
+
+        Batch batch = new Batch();
+        batch.setName(name);
         batch.setCourse(course);
-        Batch savedBatch = batchRepository.save(batch);
-        course.getBatches().add(savedBatch);
-        courseRepository.save(course);
-        return savedBatch;
+
+        Batch saved = batchRepository.save(batch);
+        System.out.println("Batch saved with ID: " + saved.getId());
+        return saved;
     }
 
     @PutMapping("/{courseId}/batches/{batchId}")
@@ -207,5 +214,79 @@ public class CourseController {
             }
         }
         return studentCourses;
+    }
+
+    @PostMapping("/{courseId}/tutors")
+    public java.util.Map<String, Object> assignTutorToCourse(@PathVariable Long courseId,
+            @RequestBody java.util.Map<String, Object> payload) {
+        try {
+            Integer tutorId = Integer.valueOf(payload.get("tutorId").toString());
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+            com.lms.auth.entity.Tutor tutor = tutorRepository.findById(tutorId)
+                    .orElseThrow(() -> new RuntimeException("Tutor not found"));
+
+            tutor.getCourses().add(course);
+            tutorRepository.save(tutor);
+
+            return java.util.Map.of("success", true, "message", "Tutor assigned to course");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return java.util.Map.of("success", false, "message", e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{courseId}/tutors/{tutorId}")
+    public java.util.Map<String, Object> removeTutorFromCourse(@PathVariable Long courseId,
+            @PathVariable Integer tutorId) {
+        try {
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+            com.lms.auth.entity.Tutor tutor = tutorRepository.findById(tutorId)
+                    .orElseThrow(() -> new RuntimeException("Tutor not found"));
+
+            tutor.getCourses().remove(course);
+            tutorRepository.save(tutor);
+
+            return java.util.Map.of("success", true, "message", "Tutor removed from course");
+        } catch (Exception e) {
+            return java.util.Map.of("success", false, "message", e.getMessage());
+        }
+    }
+
+    @GetMapping("/tutors/{tutorId}")
+    public List<Course> getCoursesForTutor(@PathVariable Integer tutorId) {
+        try {
+            System.out.println("Fetching courses for tutor ID: " + tutorId);
+            List<Course> courses = courseRepository.findCoursesByTutorId(tutorId);
+            System.out.println("Found " + (courses != null ? courses.size() : 0) + " courses.");
+
+            if (courses != null) {
+                for (Course course : courses) {
+                    // Force initialization of batches
+                    if (course.getBatches() == null) {
+                        course.setBatches(new java.util.ArrayList<>());
+                    } else {
+                        course.getBatches().size(); // Trigger lazy load
+                        for (Batch batch : course.getBatches()) {
+                            if (batch.getStudents() != null)
+                                batch.getStudents().size(); // Trigger nested
+                        }
+                    }
+                }
+                return courses;
+            }
+            return List.of();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
+
+    @GetMapping("/{courseId}/tutors")
+    public List<com.lms.auth.entity.Tutor> getTutorsForCourse(@PathVariable Long courseId) {
+        return tutorRepository.findAll().stream()
+                .filter(t -> t.getCourses().stream().anyMatch(c -> c.getId().equals(courseId)))
+                .collect(java.util.stream.Collectors.toList());
     }
 }
