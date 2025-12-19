@@ -127,8 +127,8 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               </CardContent>
             </Card>
           </section>
-          
-           <section>
+
+          <section>
             <Card>
               <CardHeader>
                 <CardTitle className="font-headline text-2xl">Tools you'll learn</CardTitle>

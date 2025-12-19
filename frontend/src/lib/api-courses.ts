@@ -5,6 +5,11 @@ export async function getCourses(): Promise<any> {
   return res.json();
 }
 
+export async function getCoursesForTutor(tutorId: string | number): Promise<any> {
+  const res = await fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`);
+  return res.json();
+}
+
 export async function createCourse(course: { title: string; description: string }): Promise<any> {
   const res = await fetch("http://localhost:8081/api/courses", {
     method: "POST",
@@ -77,5 +82,10 @@ export async function updateCourse(courseId: string | number, updatedCourse: { t
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updatedCourse),
   });
+  return res.json();
+}
+// Get tutors for a specific course
+export async function getTutorsForCourse(courseId: string | number): Promise<any> {
+  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/tutors`);
   return res.json();
 }

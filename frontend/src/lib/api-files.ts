@@ -151,7 +151,7 @@ export const getFiles = async (courseId: string, batchId: string, folderId: numb
       if (!name) return 'Untitled File';
       // strip numeric timestamp prefix like '1765771333111_'
       name = String(name).replace(/^\d+_/, '');
-      try { name = decodeURIComponent(name); } catch (e) {}
+      try { name = decodeURIComponent(name); } catch (e) { }
       return name;
     };
 
@@ -164,6 +164,7 @@ export const getFiles = async (courseId: string, batchId: string, folderId: numb
       storagePath: doc.storagePath,
       downloadUrl: doc.downloadUrl || doc.url || doc.downloadUrl,
       createdAt: doc.createdAtISO || null,
+      folderId: doc.folderId,
       raw: doc
     }));
   } catch (error) {

@@ -10,7 +10,8 @@ import {
     Upload,
     PlusCircle,
     ArrowRight,
-    Activity
+    Activity,
+    PlayCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,31 +21,65 @@ export default function TutorDashboard() {
     const [name, setName] = useState("Tutor");
     const [coursesCount, setCoursesCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
 
     useEffect(() => {
         // Load user info
         const storedName = localStorage.getItem('tutorFirstName');
         if (storedName) setName(storedName);
 
-        // Fetch Courses Count (Real Data)
-        const fetchStats = async () => {
-            const tutorId = localStorage.getItem('tutorId');
+        const fetchData = async () => {
+            let tutorId = localStorage.getItem('tutorId');
+            const token = localStorage.getItem('jwtToken');
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+
+            // Fallback: Fetch ID from profile if missing but token exists
+            if (!tutorId && token) {
+                try {
+                    const profileRes = await fetch(`${API_URL}/api/v1/tutor/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        if (profile.id) {
+                            tutorId = profile.id.toString();
+                            localStorage.setItem('tutorId', tutorId!);
+                            if (profile.firstName) {
+                                setName(profile.firstName);
+                                localStorage.setItem('tutorFirstName', profile.firstName);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch tutor profile", e);
+                }
+            }
+
             if (tutorId) {
                 try {
-                    const res = await fetch(`http://localhost:8081/courses/tutor/${encodeURIComponent(tutorId)}`);
+                    // Fetch Courses Count
+                    const res = await fetch(`${API_URL}/courses/tutor/${encodeURIComponent(tutorId)}`);
                     if (res.ok) {
                         const data = await res.json();
                         if (Array.isArray(data)) {
                             setCoursesCount(data.length);
                         }
                     }
+
+                    // Fetch Sessions
+                    const sessionRes = await fetch(`${API_URL}/api/v1/sessions/tutor/${tutorId}`);
+                    if (sessionRes.ok) {
+                        const sData = await sessionRes.json();
+                        setUpcomingSessions(sData.filter((s: any) => s.status === 'SCHEDULED'));
+                    }
                 } catch (e) {
-                    console.error("Failed to fetch courses", e);
+                    console.error("Failed to fetch dashboard data", e);
                 }
             }
             setLoading(false);
         };
-        fetchStats();
+
+        fetchData();
     }, []);
 
     return (
@@ -137,8 +172,46 @@ export default function TutorDashboard() {
 
             {/* Main Content Area */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+
+                {/* Upcoming Classes */}
+                <Card className="col-span-full mb-0 lg:col-span-7">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Clock className="h-5 w-5 text-blue-600" /> Upcoming Classes
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {upcomingSessions.length > 0 ? (
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {upcomingSessions.map((session) => (
+                                    <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                                        <div>
+                                            <h4 className="font-semibold text-sm">{session.title}</h4>
+                                            <p className="text-xs text-slate-500 mt-1">{session.course.title} • {session.batch.name}</p>
+                                            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
+                                                {new Date(session.startTime).toLocaleString()}
+                                            </p>
+                                        </div>
+                                        {session.meetingLink && (
+                                            <Button size="sm" asChild>
+                                                <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">Join</a>
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground bg-slate-50/50 rounded-lg border border-dashed">
+                                <Clock className="h-8 w-8 mb-2 opacity-20" />
+                                <p className="text-sm">No upcoming scheduled classes.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* Recent Activity */}
-                <Card className="col-span-4">
+                <Card className="col-span-4 mt-6 lg:mt-0">
                     <CardHeader>
                         <CardTitle>Recent Activity</CardTitle>
                         <CardDescription>
@@ -174,7 +247,7 @@ export default function TutorDashboard() {
                 </Card>
 
                 {/* Quick Shortcuts / Tips */}
-                <Card className="col-span-3">
+                <Card className="col-span-3 mt-6 lg:mt-0">
                     <CardHeader>
                         <CardTitle>Quick Tips</CardTitle>
                         <CardDescription>

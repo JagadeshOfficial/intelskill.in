@@ -1,2 +1,5 @@
-com\lms\auth\controller\StudentListController.class
+com\lms\auth\dto\SessionRequest.class
+com\lms\auth\entity\Session.class
+com\lms\auth\controller\SessionController.class
+com\lms\auth\service\SessionService.class
 com\lms\auth\service\BatchStudentService.class

@@ -22,8 +22,6 @@ public class StudentService {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    
-
     public Student registerStudent(StudentRegisterRequest request) throws Exception {
         // basic validation
         if (studentRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -72,10 +70,14 @@ public class StudentService {
         Optional<Student> opt = studentRepository.findById(studentId);
         if (opt.isPresent()) {
             Student s = opt.get();
-            if (updates.containsKey("firstName")) s.setFirstName(updates.get("firstName"));
-            if (updates.containsKey("lastName")) s.setLastName(updates.get("lastName"));
-            if (updates.containsKey("phoneNumber")) s.setPhoneNumber(updates.get("phoneNumber"));
-            if (updates.containsKey("photoUrl")) s.setPhotoUrl(updates.get("photoUrl"));
+            if (updates.containsKey("firstName"))
+                s.setFirstName(updates.get("firstName"));
+            if (updates.containsKey("lastName"))
+                s.setLastName(updates.get("lastName"));
+            if (updates.containsKey("phoneNumber"))
+                s.setPhoneNumber(updates.get("phoneNumber"));
+            if (updates.containsKey("photoUrl"))
+                s.setPhotoUrl(updates.get("photoUrl"));
             s.setUpdatedAt(LocalDateTime.now());
             Student saved = studentRepository.save(s);
             return java.util.Optional.of(saved);
@@ -108,9 +110,12 @@ public class StudentService {
         String phone = (String) body.get("phoneNumber");
         String status = (String) body.getOrDefault("status", "APPROVED");
 
-        if (email == null || email.isEmpty()) throw new IllegalArgumentException("Email is required");
-        if (firstName == null || firstName.isEmpty()) throw new IllegalArgumentException("First name is required");
-        if (lastName == null || lastName.isEmpty()) throw new IllegalArgumentException("Last name is required");
+        if (email == null || email.isEmpty())
+            throw new IllegalArgumentException("Email is required");
+        if (firstName == null || firstName.isEmpty())
+            throw new IllegalArgumentException("First name is required");
+        if (lastName == null || lastName.isEmpty())
+            throw new IllegalArgumentException("Last name is required");
 
         if (studentRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already registered");
@@ -137,7 +142,8 @@ public class StudentService {
     // Update student status
     public Student updateStudentStatus(Integer id, String status) {
         var opt = studentRepository.findById(id);
-        if (opt.isEmpty()) throw new IllegalArgumentException("Student not found");
+        if (opt.isEmpty())
+            throw new IllegalArgumentException("Student not found");
         Student s = opt.get();
         s.setStatus(status);
         s.setUpdatedAt(LocalDateTime.now());
@@ -146,8 +152,23 @@ public class StudentService {
 
     // Delete student
     public void deleteStudent(Integer id) {
-        if (!studentRepository.existsById(id)) throw new IllegalArgumentException("Student not found");
+        if (!studentRepository.existsById(id))
+            throw new IllegalArgumentException("Student not found");
         studentRepository.deleteById(id);
     }
-    
+
+    public void changePassword(Integer studentId, String currentPassword, String newPassword) {
+        Optional<Student> studentOpt = studentRepository.findById(studentId);
+        if (studentOpt.isPresent()) {
+            Student student = studentOpt.get();
+            if (!passwordEncoder.matches(currentPassword, student.getPassword())) {
+                throw new IllegalArgumentException("Incorrect current password");
+            }
+            student.setPassword(passwordEncoder.encode(newPassword));
+            studentRepository.save(student);
+        } else {
+            throw new IllegalArgumentException("Student not found");
+        }
+    }
+
 }

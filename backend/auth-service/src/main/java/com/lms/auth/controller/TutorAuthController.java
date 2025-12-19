@@ -1,5 +1,4 @@
-
-        // (Removed misplaced method, will add inside class below)
+// (Removed misplaced method, will add inside class below)
 package com.lms.auth.controller;
 
 import com.lms.auth.dto.*;
@@ -22,7 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/tutor")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, maxAge = 3600)
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" }, maxAge = 3600)
 public class TutorAuthController {
     /**
      * Get tutor info by email (for internal service use)
@@ -107,7 +106,8 @@ public class TutorAuthController {
         }
     }
 
-    // Development-only: retrieve last OTP for an email (useful when SMTP not configured)
+    // Development-only: retrieve last OTP for an email (useful when SMTP not
+    // configured)
     @GetMapping("/debug/last-otp")
     public ResponseEntity<Map<String, Object>> getLastOtp(@RequestParam("email") String email) {
         Map<String, Object> response = new HashMap<>();
@@ -220,7 +220,8 @@ public class TutorAuthController {
             // Check if approved by admin
             if (!tutor.getStatus().equals("APPROVED")) {
                 response.put("success", false);
-                response.put("message", "Your account is " + tutor.getStatus().toLowerCase() + " and not yet approved for login");
+                response.put("message",
+                        "Your account is " + tutor.getStatus().toLowerCase() + " and not yet approved for login");
                 return ResponseEntity.badRequest().body(response);
             }
 
@@ -259,7 +260,8 @@ public class TutorAuthController {
      * GET /api/v1/tutor/me
      */
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> getProfile(@RequestHeader(value = "Authorization", required = false) String authorization) {
+    public ResponseEntity<Map<String, Object>> getProfile(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         Map<String, Object> response = new HashMap<>();
         try {
             if (authorization == null || !authorization.startsWith("Bearer ")) {
@@ -320,13 +322,14 @@ public class TutorAuthController {
      * Convert LocalDateTime to number array format [year, month, day, hour, minute]
      */
     private Object convertDateTimeToArray(java.time.LocalDateTime dateTime) {
-        if (dateTime == null) return null;
-        return new int[]{
-            dateTime.getYear(),
-            dateTime.getMonthValue(),
-            dateTime.getDayOfMonth(),
-            dateTime.getHour(),
-            dateTime.getMinute()
+        if (dateTime == null)
+            return null;
+        return new int[] {
+                dateTime.getYear(),
+                dateTime.getMonthValue(),
+                dateTime.getDayOfMonth(),
+                dateTime.getHour(),
+                dateTime.getMinute()
         };
     }
 
@@ -335,19 +338,23 @@ public class TutorAuthController {
      * PUT /api/v1/tutor/me
      */
     @PutMapping("/me")
-    public ResponseEntity<?> updateProfile(@RequestHeader(value = "Authorization", required = false) String authorization,
-                                           @RequestBody java.util.Map<String, String> updates) {
+    public ResponseEntity<?> updateProfile(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody java.util.Map<String, String> updates) {
         try {
             if (authorization == null || !authorization.startsWith("Bearer ")) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
             }
             String token = authorization.substring(7);
             if (!jwtTokenProvider.validateToken(token)) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
             }
             Integer tutorId = jwtTokenProvider.getAdminIdFromToken(token);
             if (tutorId == null) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid token payload"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid token payload"));
             }
 
             var updatedOpt = tutorService.updateTutorProfile(tutorId, updates);
@@ -368,10 +375,12 @@ public class TutorAuthController {
                 body.put("photoUrl", tutor.getPhotoUrl());
                 return ResponseEntity.ok(body);
             } else {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(java.util.Map.of("success", false, "message", "Tutor not found"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .body(java.util.Map.of("success", false, "message", "Tutor not found"));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
         }
     }
 
@@ -380,23 +389,28 @@ public class TutorAuthController {
      * POST /api/v1/tutor/me/avatar
      */
     @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadTutorAvatar(@RequestHeader(value = "Authorization", required = false) String authorization,
-                                               @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadTutorAvatar(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam("file") MultipartFile file) {
         try {
             if (authorization == null || !authorization.startsWith("Bearer ")) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
             }
             String token = authorization.substring(7);
             if (!jwtTokenProvider.validateToken(token)) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
             }
             Integer tutorId = jwtTokenProvider.getAdminIdFromToken(token);
             if (tutorId == null) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid token payload"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid token payload"));
             }
 
             if (file == null || file.isEmpty()) {
-                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", "File is required"));
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("success", false, "message", "File is required"));
             }
 
             String fileName = fileStorageService.storeFile(file, tutorId);
@@ -409,7 +423,52 @@ public class TutorAuthController {
             body.put("id", tutor.getId());
             return ResponseEntity.ok(body);
         } catch (Exception e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Change password
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody java.util.Map<String, String> body) {
+        try {
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
+            }
+            String token = authorization.substring(7);
+            if (!jwtTokenProvider.validateToken(token)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
+            }
+            Integer tutorId = jwtTokenProvider.getAdminIdFromToken(token);
+            if (tutorId == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid token payload"));
+            }
+
+            String currentPassword = body.get("currentPassword");
+            String newPassword = body.get("newPassword");
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("success", false, "message", "Missing password fields"));
+            }
+
+            tutorService.changePassword(tutorId, currentPassword, newPassword);
+
+            var response = new java.util.HashMap<String, Object>();
+            response.put("success", true);
+            response.put("message", "Password changed successfully");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
         }
     }
 }

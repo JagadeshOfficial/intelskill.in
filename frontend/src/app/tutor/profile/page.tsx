@@ -1,51 +1,115 @@
-
 "use client"
 
 import { useEffect, useState, useRef } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AuthAvatar from "@/components/layout/auth-avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Camera, User, Mail, Shield, Smartphone, Calendar, Save, Settings, CheckCircle2, Lock, Briefcase, GraduationCap, DollarSign, Clock } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
 
+// Helper to convert LocalDateTime array to ISO string or readable date
 function formatLocalDateTime(dateArray: any): string {
-        if (!dateArray) return '';
-        if (typeof dateArray === 'string') return new Date(dateArray).toLocaleString();
-        if (Array.isArray(dateArray) && dateArray.length >= 5) {
-                const [year, month, day, hour, minute, second = 0] = dateArray;
-                const date = new Date(year, month - 1, day, hour, minute, second);
-                return date.toLocaleString();
-        }
-        return '';
+    if (!dateArray) return '';
+    if (typeof dateArray === 'string') {
+        const d = new Date(dateArray);
+        return isNaN(d.getTime()) ? '' : d.toLocaleString();
+    }
+    if (Array.isArray(dateArray) && dateArray.length >= 5) {
+        const [year, month, day, hour, minute, second = 0] = dateArray;
+        const date = new Date(year, month - 1, day, hour, minute, second);
+        return date.toLocaleString();
+    }
+    return '';
 }
 
 export default function TutorProfilePage() {
+    const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
+    const [updating, setUpdating] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
-    const [profile, setProfile] = useState<any>({
-        id: '',
-        email: '',
-        firstName: '',
-        lastName: '',
-        mobileNumber: '',
-        expertise: '',
-        bio: '',
-        qualification: '',
-        experience: '',
-        hourlyRate: '',
-        photoUrl: '',
-        status: '',
-        verified: false,
-        createdAt: '',
-        updatedAt: '',
-        lastLogin: ''
+
+    // Password state
+    const [pwOpen, setPwOpen] = useState(false);
+    const [pwLoading, setPwLoading] = useState(false);
+    const [passwords, setPasswords] = useState({
+        current: '',
+        new: '',
+        confirm: ''
     });
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const [profile, setProfile] = useState({
+        id: "",
+        email: "",
+        firstName: "",
+        lastName: "",
+        mobileNumber: '',
+        photoUrl: '',
+        role: "TUTOR",
+        status: "",
+        expertise: "",
+        bio: "",
+        qualification: "",
+        experience: "",
+        hourlyRate: "",
+        createdAt: "",
+        updatedAt: "",
+        lastLogin: ""
+    });
+
+    const fetchProfile = async () => {
+        const token = localStorage.getItem('tutorToken');
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/tutor/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setProfile({
+                    id: data.id || '',
+                    email: data.email || '',
+                    firstName: data.firstName || '',
+                    lastName: data.lastName || '',
+                    mobileNumber: data.mobileNumber || '',
+                    photoUrl: data.photoUrl || '',
+                    role: "TUTOR",
+                    status: data.status || '',
+                    expertise: data.expertise || '',
+                    bio: data.bio || '',
+                    qualification: data.qualification || '',
+                    experience: data.experience || '',
+                    hourlyRate: data.hourlyRate || '',
+                    createdAt: data.createdAt || '',
+                    updatedAt: data.updatedAt || '',
+                    lastLogin: data.lastLogin || ''
+                });
+
+                localStorage.setItem('tutorFirstName', data.firstName || '');
+                localStorage.setItem('tutorLastName', data.lastName || '');
+                localStorage.setItem('tutorPhotoUrl', data.photoUrl || '');
+            }
+        } catch (err) {
+            console.error("Failed to fetch profile", err);
+        }
+    };
 
     useEffect(() => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('tutorToken') : null;
@@ -55,107 +119,62 @@ export default function TutorProfilePage() {
             return;
         }
 
-        fetch(`${API_BASE_URL}/api/v1/tutor/me`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        }).then(async (res) => {
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || 'Failed to load profile');
-            }
-            return res.json();
-        }).then((data) => {
-            if (data.success === false) {
-                throw new Error(data.message || 'Failed to load profile');
-            }
-            setProfile({
-                id: data.id || '',
-                email: data.email || '',
-                firstName: data.firstName || '',
-                lastName: data.lastName || '',
-                mobileNumber: data.mobileNumber || '',
-                expertise: data.expertise || '',
-                bio: data.bio || '',
-                qualification: data.qualification || '',
-                experience: data.experience || '',
-                hourlyRate: data.hourlyRate || '',
-                photoUrl: data.photoUrl || '',
-                status: data.status || '',
-                verified: data.verified || false,
-                createdAt: data.createdAt || '',
-                updatedAt: data.updatedAt || '',
-                lastLogin: data.lastLogin || ''
-            });
-
-            try {
-                if (data.firstName) localStorage.setItem('tutorFirstName', data.firstName);
-                if (data.lastName) localStorage.setItem('tutorLastName', data.lastName);
-                if (data.email) localStorage.setItem('tutorEmail', data.email);
-            } catch (e) {}
-
-        }).catch((err) => {
-            console.error('Profile load error:', err);
-            setError(err.message || 'Failed to load profile');
-        }).finally(() => setLoading(false));
+        fetchProfile().finally(() => setLoading(false));
     }, []);
 
-    async function uploadAvatar(file: File | null) {
+    const handleFileClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (!file) return;
-        const token = typeof window !== 'undefined' ? localStorage.getItem('tutorToken') : null;
-        if (!token) {
-            setError('Not authenticated');
-            return;
-        }
-        setLoading(true);
+
+        const token = localStorage.getItem('tutorToken');
+        if (!token) return;
+
+        setUploading(true);
         try {
-            const form = new FormData();
-            form.append('file', file);
+            const formData = new FormData();
+            formData.append('file', file);
+
             const res = await fetch(`${API_BASE_URL}/api/v1/tutor/me/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
-                body: form
+                body: formData
             });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.message || "Failed to upload image");
+            }
+
             const data = await res.json();
-            if (!res.ok || data.success === false) {
-                throw new Error(data.message || 'Upload failed');
-            }
-            setProfile((p:any) => ({...p, photoUrl: data.photoUrl}));
-            if (data.photoUrl) localStorage.setItem('tutorPhotoUrl', data.photoUrl);
-            alert('Avatar uploaded');
-            if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-                setPreviewUrl(null);
-            }
-        } catch (err:any) {
-            console.error('Upload error', err);
-            setError(err.message || 'Failed to upload avatar');
+            setProfile(prev => ({ ...prev, photoUrl: data.photoUrl }));
+
+            toast({
+                title: "Success",
+                description: "Profile picture updated successfully.",
+            });
+
+            localStorage.setItem('tutorPhotoUrl', data.photoUrl);
+
+        } catch (err: any) {
+            toast({
+                title: "Upload failed",
+                description: err.message,
+                variant: "destructive"
+            });
         } finally {
-            setLoading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+            setUploading(false);
         }
-    }
+    };
 
-    function handleFileSelection(file: File | null) {
-        if (!file) return;
-        if (previewUrl) {
-            URL.revokeObjectURL(previewUrl);
-        }
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
-        uploadAvatar(file);
-    }
-
-    async function saveChanges() {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('tutorToken') : null;
-        if (!token) {
-            setError('Not authenticated');
-            return;
-        }
-        setLoading(true);
+    const handleSave = async () => {
+        setUpdating(true);
+        const token = localStorage.getItem('tutorToken');
         try {
             const res = await fetch(`${API_BASE_URL}/api/v1/tutor/me`, {
                 method: 'PUT',
@@ -166,157 +185,362 @@ export default function TutorProfilePage() {
                 body: JSON.stringify({
                     firstName: profile.firstName,
                     lastName: profile.lastName,
+                    photoUrl: profile.photoUrl,
                     phoneNumber: profile.mobileNumber,
                     expertise: profile.expertise,
                     bio: profile.bio,
                     qualification: profile.qualification,
                     experience: profile.experience,
-                    hourlyRate: profile.hourlyRate,
-                    photoUrl: profile.photoUrl
+                    hourlyRate: profile.hourlyRate
                 })
             });
-            const data = await res.json();
-            if (!res.ok || data.success === false) {
-                throw new Error(data.message || 'Failed to save profile');
-            }
-            setProfile((p:any) => ({...p, ...data}));
-            try {
-                if (data.firstName) localStorage.setItem('tutorFirstName', data.firstName);
-                if (data.lastName) localStorage.setItem('tutorLastName', data.lastName);
-                if (data.email) localStorage.setItem('tutorEmail', data.email);
-                if (data.photoUrl) localStorage.setItem('tutorPhotoUrl', data.photoUrl);
-            } catch (e) {}
-            alert('Profile saved successfully');
-        } catch (err:any) {
-            console.error('Save error', err);
-            setError(err.message || 'Failed to save profile');
-        } finally {
-            setLoading(false);
-        }
-    }
 
-    if (loading) return <div>Loading profile...</div>;
-    if (error) return <div className="text-red-600">{error}</div>;
+            if (!res.ok) throw new Error("Failed to save profile changes");
+
+            toast({
+                title: "Profile Updated",
+                description: "Your information has been saved successfully.",
+            });
+            await fetchProfile();
+        } catch (err: any) {
+            toast({
+                title: "Update failed",
+                description: err.message,
+                variant: "destructive"
+            });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handlePasswordUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwords.new !== passwords.confirm) {
+            toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+            return;
+        }
+
+        const token = localStorage.getItem('tutorToken');
+        if (!token) return;
+
+        setPwLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/tutor/change-password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    currentPassword: passwords.current,
+                    newPassword: passwords.new
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.message || "Failed to update password");
+
+            setPwOpen(false);
+            setPasswords({ current: '', new: '', confirm: '' });
+            toast({
+                title: "Success",
+                description: "Your password has been updated successfully.",
+            });
+        } catch (err: any) {
+            toast({
+                title: "Update failed",
+                description: err.message,
+                variant: "destructive"
+            });
+        } finally {
+            setPwLoading(false);
+        }
+    };
+
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[500px]">
+            <Loader2 className="h-10 w-10 animate-spin text-slate-900" />
+        </div>
+    );
+
+    if (error) return (
+        <div className="max-w-md mx-auto mt-20 p-8 text-center bg-white rounded-3xl border border-slate-100 shadow-xl">
+            <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
+            <p className="text-slate-500 mb-6">{error}</p>
+            <Button className="rounded-xl w-full" onClick={() => window.location.href = '/login'}>Return to Login</Button>
+        </div>
+    );
 
     return (
-        <div className="space-y-8">
-             <header>
-                <h1 className="text-4xl font-bold font-headline tracking-tighter">My Profile</h1>
-                <p className="text-lg text-muted-foreground mt-2">Manage your account details and public tutor profile.</p>
-            </header>
+        <div className="min-h-screen bg-[#FAFBFC] p-4 md:p-8 lg:p-12">
+            <div className="max-w-6xl mx-auto space-y-12">
 
-            <main className="space-y-8">
-                <Card>
-                        <CardHeader>
-                                <CardTitle>Personal Information</CardTitle>
-                                <CardDescription>This information is private and will not be displayed on your public profile.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                       <Avatar className="h-20 w-20">
-                                           {previewUrl ? (
-                                               <>
-                                                 <AuthAvatar src={previewUrl} alt="Preview Avatar" />
-                                                 <AvatarFallback>{(profile.firstName || 'T')[0]}</AvatarFallback>
-                                               </>
-                                           ) : profile.photoUrl ? (
-                                               <>
-                                                 <AuthAvatar photoKey={profile.photoUrl} alt="Tutor Avatar" />
-                                                 <AvatarFallback>{(profile.firstName || 'T')[0]}</AvatarFallback>
-                                               </>
-                                           ) : (
-                                               <>
-                                                 <AuthAvatar src="https://i.pravatar.cc/150?u=tutor" alt="Tutor Avatar" />
-                                                 <AvatarFallback>{(profile.firstName || 'T')[0]}</AvatarFallback>
-                                               </>
-                                           )}
-                                       </Avatar>
-                                        <div>
-                                            <input ref={fileInputRef} onChange={(e)=>handleFileSelection(e.target.files ? e.target.files[0] : null)} type="file" accept="image/*" id="avatarFileInput" className="hidden" />
-                                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Change Picture</Button>
-                                        </div>
-                                </div>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                                <Label htmlFor="firstName">First Name</Label>
-                                                <Input id="firstName" value={profile.firstName} onChange={(e)=>setProfile({...profile, firstName: e.target.value})} />
-                                        </div>
-                                        <div className="space-y-2">
-                                                <Label htmlFor="lastName">Last Name</Label>
-                                                <Input id="lastName" value={profile.lastName} onChange={(e)=>setProfile({...profile, lastName: e.target.value})} />
-                                        </div>
-                                </div>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                                <Label htmlFor="email">Email</Label>
-                                                <Input id="email" type="email" value={profile.email} disabled />
-                                        </div>
-                                        <div className="space-y-2">
-                                                <Label htmlFor="phone">Phone</Label>
-                                                <Input id="phone" value={profile.mobileNumber} onChange={(e)=>setProfile({...profile, mobileNumber: e.target.value})} />
-                                        </div>
-                                </div>
-                        </CardContent>
-                </Card>
-
-                 <Card>
-                        <CardHeader>
-                                <CardTitle>Public Tutor Profile</CardTitle>
-                                <CardDescription>This information will be visible to students.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                                 <div className="space-y-2">
-                                        <Label htmlFor="expertise">Area of Expertise</Label>
-                                        <Input id="expertise" value={profile.expertise} onChange={(e)=>setProfile({...profile, expertise: e.target.value})} />
-                                </div>
-                                 <div className="space-y-2">
-                                        <Label htmlFor="bio">Short Bio</Label>
-                                        <Textarea id="bio" placeholder="Tell students a little bit about yourself..." value={profile.bio} onChange={(e)=>setProfile({...profile, bio: e.target.value})} />
-                                </div>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                        <div className="space-y-2">
-                                                <Label htmlFor="qualification">Qualification</Label>
-                                                <Input id="qualification" value={profile.qualification} onChange={(e)=>setProfile({...profile, qualification: e.target.value})} />
-                                        </div>
-                                        <div className="space-y-2">
-                                                <Label htmlFor="experience">Experience</Label>
-                                                <Input id="experience" value={profile.experience} onChange={(e)=>setProfile({...profile, experience: e.target.value})} />
-                                        </div>
-                                        <div className="space-y-2">
-                                                <Label htmlFor="hourlyRate">Hourly Rate</Label>
-                                                <Input id="hourlyRate" value={profile.hourlyRate} onChange={(e)=>setProfile({...profile, hourlyRate: e.target.value})} />
-                                        </div>
-                                </div>
-                        </CardContent>
-                </Card>
-
-                <Card>
-                        <CardHeader>
-                                <CardTitle>Timeline</CardTitle>
-                                <CardDescription>Important dates related to your account.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                                <div className="grid md:grid-cols-3 gap-4">
-                                        <div className="space-y-2">
-                                                <Label htmlFor="createdAt">Account Created</Label>
-                                                <Input id="createdAt" value={formatLocalDateTime(profile.createdAt)} disabled />
-                                        </div>
-                                        <div className="space-y-2">
-                                                <Label htmlFor="updatedAt">Last Updated</Label>
-                                                <Input id="updatedAt" value={formatLocalDateTime(profile.updatedAt)} disabled />
-                                        </div>
-                                        <div className="space-y-2">
-                                                <Label htmlFor="lastLogin">Last Login</Label>
-                                                <Input id="lastLogin" value={formatLocalDateTime(profile.lastLogin) || 'Never'} disabled />
-                                        </div>
-                                </div>
-                        </CardContent>
-                </Card>
-
-                <div className="flex justify-end">
-                        <Button onClick={saveChanges}>Save Changes</Button>
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-10">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">
+                            <Settings className="h-3.5 w-3.5" /> Account Management
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Tutor Profile</h1>
+                        <p className="text-slate-500 text-lg font-medium">Manage your professional details and account settings.</p>
+                    </div>
+                    <Button
+                        onClick={handleSave}
+                        disabled={updating || uploading}
+                        className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-slate-200"
+                    >
+                        {updating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                        Save Changes
+                    </Button>
                 </div>
-            </main>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+
+                    {/* LEFT COLUMN */}
+                    <aside className="lg:col-span-4 space-y-8">
+                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden p-8">
+                            <div className="flex flex-col items-center text-center space-y-6">
+                                <div className="relative group/avatar">
+                                    <Avatar className="h-40 w-40 border-8 border-slate-50 shadow-inner bg-slate-100 overflow-hidden transition-all duration-500 group-hover:border-slate-100">
+                                        {profile.photoUrl ? (
+                                            <AuthAvatar photoKey={profile.photoUrl} alt="Tutor" />
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full w-full bg-slate-900 text-white font-black text-6xl">
+                                                {profile.firstName?.[0]}
+                                            </div>
+                                        )}
+                                        {uploading && (
+                                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
+                                                <Loader2 className="h-8 w-8 text-black animate-spin mb-1" />
+                                                <span className="text-[8px] font-black uppercase">Switching...</span>
+                                            </div>
+                                        )}
+                                    </Avatar>
+                                    <button
+                                        onClick={handleFileClick}
+                                        disabled={uploading}
+                                        className="absolute bottom-2 right-2 p-3 bg-white text-slate-900 rounded-full shadow-2xl hover:bg-slate-50 transition-all border border-slate-100"
+                                    >
+                                        <Camera className="h-5 w-5" />
+                                    </button>
+                                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <h2 className="text-3xl font-black text-slate-900 capitalize">{profile.firstName} {profile.lastName}</h2>
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Badge className="bg-slate-100 text-slate-600 border-none px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{profile.role}</Badge>
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {profile.status}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="w-full pt-6 border-t border-slate-50 space-y-4">
+                                    <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+                                        <Mail className="h-4 w-4 text-slate-400" />
+                                        <span className="text-sm font-bold text-slate-600 truncate">{profile.email}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+                                        <Smartphone className="h-4 w-4 text-slate-400" />
+                                        <span className="text-sm font-bold text-slate-600 truncate">{profile.mobileNumber || "No Phone"}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-900 rounded-[32px] p-8 text-white space-y-6">
+                            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Account Activity</h4>
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Since</p>
+                                    <p className="text-lg font-bold">{formatLocalDateTime(profile.createdAt).split(',')[0]}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Last Login</p>
+                                    <p className="text-lg font-bold">{formatLocalDateTime(profile.lastLogin).split(',')[0] || 'Recently'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* RIGHT COLUMN */}
+                    <main className="lg:col-span-8 space-y-8">
+                        <section className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-10 md:p-14">
+                            <h3 className="text-2xl font-black text-slate-900 mb-10">Personal Details</h3>
+
+                            <div className="grid md:grid-cols-2 gap-10 mb-10">
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">First Name</Label>
+                                    <Input
+                                        value={profile.firstName}
+                                        onChange={e => setProfile({ ...profile, firstName: e.target.value })}
+                                        className="h-14 bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl px-6 text-slate-900 font-bold"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</Label>
+                                    <Input
+                                        value={profile.lastName}
+                                        onChange={e => setProfile({ ...profile, lastName: e.target.value })}
+                                        className="h-14 bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl px-6 text-slate-900 font-bold"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</Label>
+                                    <Input
+                                        value={profile.mobileNumber}
+                                        onChange={e => setProfile({ ...profile, mobileNumber: e.target.value })}
+                                        className="h-14 bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl px-6 text-slate-900 font-bold"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tutor ID</Label>
+                                    <div className="h-14 flex items-center px-6 bg-slate-100/30 border border-slate-100 rounded-2xl text-slate-400 font-mono text-xs">
+                                        #{profile.id}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3 className="text-2xl font-black text-slate-900 mb-10 pt-4 border-t border-slate-50">Professional Info</h3>
+
+                            <div className="grid md:grid-cols-2 gap-10 mb-10">
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Expertise / Subject</Label>
+                                    <div className="relative">
+                                        <Briefcase className="absolute left-6 top-5 h-4 w-4 text-slate-400" />
+                                        <Input
+                                            value={profile.expertise}
+                                            onChange={e => setProfile({ ...profile, expertise: e.target.value })}
+                                            className="h-14 pl-14 bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl text-slate-900 font-bold"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Hourly Rate</Label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-6 top-5 h-4 w-4 text-slate-400" />
+                                        <Input
+                                            value={profile.hourlyRate}
+                                            onChange={e => setProfile({ ...profile, hourlyRate: e.target.value })}
+                                            className="h-14 pl-14 bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl text-slate-900 font-bold"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-3 md:col-span-2">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Qualification</Label>
+                                    <div className="relative">
+                                        <GraduationCap className="absolute left-6 top-5 h-4 w-4 text-slate-400" />
+                                        <Input
+                                            value={profile.qualification}
+                                            onChange={e => setProfile({ ...profile, qualification: e.target.value })}
+                                            className="h-14 pl-14 bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl text-slate-900 font-bold"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-3 md:col-span-2">
+                                    <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Bio</Label>
+                                    <Textarea
+                                        value={profile.bio}
+                                        onChange={e => setProfile({ ...profile, bio: e.target.value })}
+                                        className="min-h-[120px] bg-slate-50/50 border-slate-100 focus:bg-white focus:border-slate-900 transition-all rounded-2xl p-6 text-slate-900 font-medium resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Security Section */}
+                            <div className="mt-20 pt-10 border-t border-slate-50">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <Shield className="h-5 w-5 text-slate-900" />
+                                    <h4 className="text-xl font-black text-slate-900">Security & Credentials</h4>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {/* Password Dialog */}
+                                    <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+                                        <DialogTrigger asChild>
+                                            <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100 group transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-100 cursor-pointer">
+                                                <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-6 transition-all group-hover:bg-slate-900 group-hover:text-white">
+                                                    <Lock className="h-5 w-5" />
+                                                </div>
+                                                <h5 className="font-black text-slate-900 mb-2">Password Update</h5>
+                                                <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">Secure your account by regularly updating your access key.</p>
+                                                <span className="text-slate-900 font-black text-xs uppercase tracking-widest group-hover:underline flex items-center gap-2">Update Now →</span>
+                                            </div>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[425px] rounded-[32px] p-8">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-2xl font-black">Change Password</DialogTitle>
+                                                <DialogDescription className="font-medium text-slate-500">
+                                                    Enter your current password to authorize this update.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <form onSubmit={handlePasswordUpdate} className="space-y-6 pt-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest">Current Password</Label>
+                                                    <Input
+                                                        type="password"
+                                                        className="h-12 rounded-xl bg-slate-50 border-none"
+                                                        value={passwords.current}
+                                                        onChange={e => setPasswords({ ...passwords, current: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest">New Password</Label>
+                                                    <Input
+                                                        type="password"
+                                                        className="h-12 rounded-xl bg-slate-50 border-none"
+                                                        value={passwords.new}
+                                                        onChange={e => setPasswords({ ...passwords, new: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest">Confirm New Password</Label>
+                                                    <Input
+                                                        type="password"
+                                                        className="h-12 rounded-xl bg-slate-50 border-none"
+                                                        value={passwords.confirm}
+                                                        onChange={e => setPasswords({ ...passwords, confirm: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <DialogFooter className="pt-4">
+                                                    <Button type="submit" disabled={pwLoading} className="w-full h-14 rounded-2xl bg-black font-black uppercase tracking-widest text-xs">
+                                                        {pwLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Authorize Change"}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    {/* MFA Section */}
+                                    <div
+                                        onClick={() => toast({ title: "Setup App", description: "Multi-Factor Authentication module is currently under maintenance.", variant: "default" })}
+                                        className="p-8 rounded-3xl bg-slate-50 border border-slate-100 group transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-100 cursor-pointer"
+                                    >
+                                        <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-6 transition-all group-hover:bg-blue-600 group-hover:text-white">
+                                            <CheckCircle2 className="h-5 w-5" />
+                                        </div>
+                                        <h5 className="font-black text-slate-900 mb-2">Authenticator App</h5>
+                                        <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">Add an extra layer of protection with 2FA verification.</p>
+                                        <span className="text-slate-900 font-black text-xs uppercase tracking-widest group-hover:underline">Setup App →</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div className="bg-slate-50 rounded-[32px] p-8 border border-slate-100 flex items-center justify-center text-center">
+                            <p className="text-sm font-bold text-slate-400">
+                                All profile data is managed in accordance with our internal security protocols.
+                            </p>
+                        </div>
+                    </main>
+                </div>
+            </div>
         </div>
     );
 }

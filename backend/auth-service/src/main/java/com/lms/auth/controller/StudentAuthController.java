@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/student")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, maxAge = 3600)
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" }, maxAge = 3600)
 public class StudentAuthController {
 
     @Autowired
@@ -78,19 +78,29 @@ public class StudentAuthController {
         Map<String, Object> response = new HashMap<>();
         try {
             if (request.getEmail() == null || request.getEmail().isEmpty()) {
-                response.put("success", false); response.put("message", "Email is required"); return ResponseEntity.badRequest().body(response);
+                response.put("success", false);
+                response.put("message", "Email is required");
+                return ResponseEntity.badRequest().body(response);
             }
             if (request.getPassword() == null || request.getPassword().isEmpty()) {
-                response.put("success", false); response.put("message", "Password is required"); return ResponseEntity.badRequest().body(response);
+                response.put("success", false);
+                response.put("message", "Password is required");
+                return ResponseEntity.badRequest().body(response);
             }
             if (request.getPassword().length() < 6) {
-                response.put("success", false); response.put("message", "Password must be at least 6 characters"); return ResponseEntity.badRequest().body(response);
+                response.put("success", false);
+                response.put("message", "Password must be at least 6 characters");
+                return ResponseEntity.badRequest().body(response);
             }
             if (request.getFirstName() == null || request.getFirstName().isEmpty()) {
-                response.put("success", false); response.put("message", "First name is required"); return ResponseEntity.badRequest().body(response);
+                response.put("success", false);
+                response.put("message", "First name is required");
+                return ResponseEntity.badRequest().body(response);
             }
             if (request.getLastName() == null || request.getLastName().isEmpty()) {
-                response.put("success", false); response.put("message", "Last name is required"); return ResponseEntity.badRequest().body(response);
+                response.put("success", false);
+                response.put("message", "Last name is required");
+                return ResponseEntity.badRequest().body(response);
             }
 
             Student student = studentService.registerStudent(request);
@@ -112,13 +122,27 @@ public class StudentAuthController {
             String email = request.get("email");
             String password = request.get("password");
             if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
-                response.put("success", false); response.put("message", "Email and password are required"); return ResponseEntity.badRequest().body(response);
+                response.put("success", false);
+                response.put("message", "Email and password are required");
+                return ResponseEntity.badRequest().body(response);
             }
             Optional<Student> opt = studentService.findByEmail(email);
-            if (opt.isEmpty()) { response.put("success", false); response.put("message", "Invalid email or password"); return ResponseEntity.badRequest().body(response); }
+            if (opt.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Invalid email or password");
+                return ResponseEntity.badRequest().body(response);
+            }
             Student student = opt.get();
-            if (!student.getVerified()) { response.put("success", false); response.put("message", "Email not verified"); return ResponseEntity.badRequest().body(response); }
-            if (!passwordEncoder.matches(password, student.getPassword())) { response.put("success", false); response.put("message", "Invalid email or password"); return ResponseEntity.badRequest().body(response); }
+            if (!student.getVerified()) {
+                response.put("success", false);
+                response.put("message", "Email not verified");
+                return ResponseEntity.badRequest().body(response);
+            }
+            if (!passwordEncoder.matches(password, student.getPassword())) {
+                response.put("success", false);
+                response.put("message", "Invalid email or password");
+                return ResponseEntity.badRequest().body(response);
+            }
 
             studentService.updateLastLogin(student.getId());
             String token = studentService.generateToken(student);
@@ -140,17 +164,28 @@ public class StudentAuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> getProfile(@RequestHeader(value = "Authorization", required = false) String authorization) {
+    public ResponseEntity<Map<String, Object>> getProfile(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         Map<String, Object> response = new HashMap<>();
         try {
             if (authorization == null || !authorization.startsWith("Bearer ")) {
-                response.put("success", false); response.put("message", "Missing or invalid Authorization header"); return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
+                response.put("success", false);
+                response.put("message", "Missing or invalid Authorization header");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
             }
             String token = authorization.substring(7);
-            if (!jwtTokenProvider.validateToken(token)) { response.put("success", false); response.put("message", "Invalid or expired token"); return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response); }
+            if (!jwtTokenProvider.validateToken(token)) {
+                response.put("success", false);
+                response.put("message", "Invalid or expired token");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
+            }
 
             Integer studentId = jwtTokenProvider.getAdminIdFromToken(token);
-            if (studentId == null) { response.put("success", false); response.put("message", "Invalid token payload"); return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response); }
+            if (studentId == null) {
+                response.put("success", false);
+                response.put("message", "Invalid token payload");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
+            }
 
             var opt = studentService.getStudentById(studentId);
             if (opt.isPresent()) {
@@ -171,32 +206,42 @@ public class StudentAuthController {
                 body.put("message", "Profile retrieved successfully");
                 return ResponseEntity.ok(body);
             } else {
-                response.put("success", false); response.put("message", "Student not found"); return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(response);
+                response.put("success", false);
+                response.put("message", "Student not found");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(response);
             }
         } catch (Exception e) {
-            response.put("success", false); response.put("message", e.getMessage()); return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     private Object convertDateTimeToArray(java.time.LocalDateTime dateTime) {
-        if (dateTime == null) return null;
-        return new int[]{ dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth(), dateTime.getHour(), dateTime.getMinute() };
+        if (dateTime == null)
+            return null;
+        return new int[] { dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth(), dateTime.getHour(),
+                dateTime.getMinute() };
     }
 
     @PutMapping("/me")
-    public ResponseEntity<?> updateProfile(@RequestHeader(value = "Authorization", required = false) String authorization,
-                                           @RequestBody java.util.Map<String, String> updates) {
+    public ResponseEntity<?> updateProfile(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody java.util.Map<String, String> updates) {
         try {
             if (authorization == null || !authorization.startsWith("Bearer ")) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
             }
             String token = authorization.substring(7);
             if (!jwtTokenProvider.validateToken(token)) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
             }
             Integer studentId = jwtTokenProvider.getAdminIdFromToken(token);
             if (studentId == null) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid token payload"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid token payload"));
             }
 
             var updatedOpt = studentService.updateStudentProfile(studentId, updates);
@@ -212,31 +257,38 @@ public class StudentAuthController {
                 body.put("photoUrl", s.getPhotoUrl());
                 return ResponseEntity.ok(body);
             } else {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(java.util.Map.of("success", false, "message", "Student not found"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                        .body(java.util.Map.of("success", false, "message", "Student not found"));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
         }
     }
 
     @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadStudentAvatar(@RequestHeader(value = "Authorization", required = false) String authorization,
-                                                 @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadStudentAvatar(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam("file") MultipartFile file) {
         try {
             if (authorization == null || !authorization.startsWith("Bearer ")) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
             }
             String token = authorization.substring(7);
             if (!jwtTokenProvider.validateToken(token)) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
             }
             Integer studentId = jwtTokenProvider.getAdminIdFromToken(token);
             if (studentId == null) {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(java.util.Map.of("success", false, "message", "Invalid token payload"));
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid token payload"));
             }
 
             if (file == null || file.isEmpty()) {
-                return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", "File is required"));
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("success", false, "message", "File is required"));
             }
 
             String fileName = fileStorageService.storeFile(file, studentId);
@@ -249,7 +301,52 @@ public class StudentAuthController {
             body.put("id", s.getId());
             return ResponseEntity.ok(body);
         } catch (Exception e) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Change password
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody java.util.Map<String, String> body) {
+        try {
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Missing or invalid Authorization header"));
+            }
+            String token = authorization.substring(7);
+            if (!jwtTokenProvider.validateToken(token)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid or expired token"));
+            }
+            Integer studentId = jwtTokenProvider.getAdminIdFromToken(token);
+            if (studentId == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of("success", false, "message", "Invalid token payload"));
+            }
+
+            String currentPassword = body.get("currentPassword");
+            String newPassword = body.get("newPassword");
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("success", false, "message", "Missing password fields"));
+            }
+
+            studentService.changePassword(studentId, currentPassword, newPassword);
+
+            var response = new java.util.HashMap<String, Object>();
+            response.put("success", true);
+            response.put("message", "Password changed successfully");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
         }
     }
 }

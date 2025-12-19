@@ -11,6 +11,9 @@ import {
   MessageSquare,
   UserCog,
   UserCheck,
+  FileText,
+  ClipboardCheck,
+  Calendar,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +24,9 @@ const navLinks = [
   { href: '/admin/admins', label: 'Admins', icon: UserCog },
   { href: '/admin/courses', label: 'Courses', icon: GraduationCap },
   { href: '/admin/content', label: 'Content', icon: BookOpen },
+  { href: '/admin/assignments', label: 'Assignments', icon: FileText },
+  { href: '/admin/tests', label: 'Tests', icon: ClipboardCheck },
+  { href: '/admin/sessions', label: 'Sessions', icon: Calendar },
   { href: '/admin/tutor-applications', label: 'Tutor Applications', icon: ShieldCheck },
 ]
 
@@ -28,7 +34,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 flex-shrink-0 border-r bg-background flex flex-col fixed top-0 left-0 h-full">
+    <aside className="w-64 flex-shrink-0 border-r bg-background flex flex-col fixed top-0 left-0 h-full z-50">
       <div className="h-16 flex items-center px-6 border-b">
         <Link href="/admin/dashboard" className="flex items-center gap-2">
           <GraduationCap className="h-7 w-7 text-primary" />
@@ -50,7 +56,7 @@ export function Sidebar() {
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                <link.icon className="h-5 w-5" />
+                <link.icon className="h-5 w-5 pointer-events-none" />
                 <span>{link.label}</span>
               </Link>
             </li>

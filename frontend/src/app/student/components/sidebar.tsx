@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 const navLinks = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/student/my-courses', label: 'My Courses', icon: Library },
-  { href: '/student/content', label: 'Learning Materials', icon: BookCopy },
+  { href: '/student/assignments', label: 'Assignments', icon: Calendar },
   { href: '/student/tests', label: 'Online Tests', icon: PenSquare },
   { href: '/student/compiler', label: 'Practice', icon: Terminal },
   { href: '/student/sessions', label: 'Live Sessions', icon: Calendar },

@@ -24,12 +24,16 @@ public class TutorService {
 
     @Autowired
     private NotificationService notificationService;
-    
+
     @Autowired
     private FileStorageService fileStorageService;
 
     public Tutor registerTutor(TutorRegisterRequest request) throws Exception {
-        // ...existing validation code...
+        // basic validation
+        if (tutorRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
         Tutor tutor = new Tutor();
         tutor.setEmail(request.getEmail());
         tutor.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -97,15 +101,24 @@ public class TutorService {
         Optional<Tutor> tutorOpt = tutorRepository.findById(tutorId);
         if (tutorOpt.isPresent()) {
             Tutor tutor = tutorOpt.get();
-            if (updates.containsKey("firstName")) tutor.setFirstName(updates.get("firstName"));
-            if (updates.containsKey("lastName")) tutor.setLastName(updates.get("lastName"));
-            if (updates.containsKey("phoneNumber")) tutor.setPhoneNumber(updates.get("phoneNumber"));
-            if (updates.containsKey("expertise")) tutor.setExpertise(updates.get("expertise"));
-            if (updates.containsKey("bio")) tutor.setBio(updates.get("bio"));
-            if (updates.containsKey("qualification")) tutor.setQualification(updates.get("qualification"));
-            if (updates.containsKey("experience")) tutor.setExperience(updates.get("experience"));
-            if (updates.containsKey("hourlyRate")) tutor.setHourlyRate(updates.get("hourlyRate"));
-            if (updates.containsKey("photoUrl")) tutor.setPhotoUrl(updates.get("photoUrl"));
+            if (updates.containsKey("firstName"))
+                tutor.setFirstName(updates.get("firstName"));
+            if (updates.containsKey("lastName"))
+                tutor.setLastName(updates.get("lastName"));
+            if (updates.containsKey("phoneNumber"))
+                tutor.setPhoneNumber(updates.get("phoneNumber"));
+            if (updates.containsKey("expertise"))
+                tutor.setExpertise(updates.get("expertise"));
+            if (updates.containsKey("bio"))
+                tutor.setBio(updates.get("bio"));
+            if (updates.containsKey("qualification"))
+                tutor.setQualification(updates.get("qualification"));
+            if (updates.containsKey("experience"))
+                tutor.setExperience(updates.get("experience"));
+            if (updates.containsKey("hourlyRate"))
+                tutor.setHourlyRate(updates.get("hourlyRate"));
+            if (updates.containsKey("photoUrl"))
+                tutor.setPhotoUrl(updates.get("photoUrl"));
             tutor.setUpdatedAt(LocalDateTime.now());
             Tutor saved = tutorRepository.save(tutor);
             return java.util.Optional.of(saved);
@@ -143,5 +156,19 @@ public class TutorService {
             return;
         }
         throw new IllegalArgumentException("Tutor not found with id: " + tutorId);
+    }
+
+    public void changePassword(Integer tutorId, String currentPassword, String newPassword) {
+        Optional<Tutor> tutorOpt = tutorRepository.findById(tutorId);
+        if (tutorOpt.isPresent()) {
+            Tutor tutor = tutorOpt.get();
+            if (!passwordEncoder.matches(currentPassword, tutor.getPassword())) {
+                throw new IllegalArgumentException("Incorrect current password");
+            }
+            tutor.setPassword(passwordEncoder.encode(newPassword));
+            tutorRepository.save(tutor);
+        } else {
+            throw new IllegalArgumentException("Tutor not found");
+        }
     }
 }

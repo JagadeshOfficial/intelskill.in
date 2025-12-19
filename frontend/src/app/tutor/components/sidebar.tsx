@@ -20,8 +20,10 @@ import { cn } from '@/lib/utils'
 const navLinks = [
   { href: '/tutor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/tutor/courses', label: 'Courses', icon: BookCopy },
+  { href: '/tutor/assignments', label: 'Assignments', icon: ClipboardCheck },
   { href: '/tutor/content', label: 'Content', icon: FileText },
   { href: '/tutor/tests', label: 'Tests', icon: PenSquare },
+  { href: '/tutor/sessions', label: 'Sessions', icon: Video },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
 ]
 
