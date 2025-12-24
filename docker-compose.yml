@@ -11,9 +11,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # In Docker, we use the service name (backend) to talk to other containers
-      # We use the Rewrite in next.config.ts, so the browser talks to Next.js, 
-      # and Next.js talks to the backend via this internal URL.
       - BACKEND_URL=http://backend:8081
     depends_on:
       - backend
@@ -30,10 +27,10 @@ services:
     ports:
       - "8081:8081"
     environment:
-      # Connect to the 'mysql' service defined below
+      # Using 'mysql' hostname (service name) and updated credentials
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/auth_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATASOURCE_PASSWORD=Sivani@123
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
     depends_on:
@@ -50,12 +47,12 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=Sivani@123
       - MYSQL_DATABASE=auth_db
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-pSivani@123"]
       timeout: 20s
       retries: 10
     networks:
