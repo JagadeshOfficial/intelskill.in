@@ -26,8 +26,8 @@ const navLinks = [
   { href: '/admin/content', label: 'Content', icon: BookOpen },
   { href: '/admin/assignments', label: 'Assignments', icon: FileText },
   { href: '/admin/tests', label: 'Tests', icon: ClipboardCheck },
-  { href: '/admin/sessions', label: 'Sessions', icon: Calendar },
   { href: '/admin/tutor-applications', label: 'Tutor Applications', icon: ShieldCheck },
+  { href: '/admin/sessions', label: 'Online Sessions', icon: Calendar },
 ]
 
 export function Sidebar() {

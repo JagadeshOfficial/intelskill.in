@@ -1,7 +1,6 @@
 package com.lms.auth.controller;
 
-import com.lms.auth.dto.SessionRequest;
-import com.lms.auth.entity.Session;
+import com.lms.auth.dto.SessionDTO;
 import com.lms.auth.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,46 +10,41 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/sessions")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" })
+@RequestMapping("/sessions")
+@CrossOrigin(origins = "*") // Adjust for production
 public class SessionController {
 
     @Autowired
     private SessionService sessionService;
 
     @PostMapping
-    public ResponseEntity<?> createSession(@RequestBody SessionRequest request) {
-        try {
-            Session session = sessionService.createSession(request);
-            return ResponseEntity
-                    .ok(Map.of("success", true, "message", "Session created successfully", "session", session));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public ResponseEntity<SessionDTO> createSession(@RequestBody SessionDTO sessionDTO) {
+        return ResponseEntity.ok(sessionService.createSession(sessionDTO));
     }
 
-    @GetMapping
-    public ResponseEntity<List<Session>> getAllSessions() {
-        return ResponseEntity.ok(sessionService.getAllSessions());
-    }
-
-    @GetMapping("/tutor/{tutorId}")
-    public ResponseEntity<List<Session>> getSessionsByTutor(@PathVariable Integer tutorId) {
-        return ResponseEntity.ok(sessionService.getSessionsByTutor(tutorId));
-    }
-
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<Session>> getSessionsByStudent(@PathVariable Integer studentId) {
-        return ResponseEntity.ok(sessionService.getSessionsByStudent(studentId));
+    @PutMapping("/{id}")
+    public ResponseEntity<SessionDTO> updateSession(@PathVariable Long id, @RequestBody SessionDTO sessionDTO) {
+        return ResponseEntity.ok(sessionService.updateSession(id, sessionDTO));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSession(@PathVariable Long id) {
-        try {
-            sessionService.deleteSession(id);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Session deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+        sessionService.deleteSession(id);
+        return ResponseEntity.ok(Map.of("message", "Session deleted successfully"));
+    }
+
+    @GetMapping("/batch/{batchId}")
+    public ResponseEntity<List<SessionDTO>> getSessionsByBatch(@PathVariable Long batchId) {
+        return ResponseEntity.ok(sessionService.getSessionsByBatch(batchId));
+    }
+
+    @GetMapping("/tutor/{tutorId}")
+    public ResponseEntity<List<SessionDTO>> getSessionsByTutor(@PathVariable Integer tutorId) {
+        return ResponseEntity.ok(sessionService.getSessionsByTutor(tutorId));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<SessionDTO>> getAllSessions() {
+        return ResponseEntity.ok(sessionService.getAllSessions());
     }
 }

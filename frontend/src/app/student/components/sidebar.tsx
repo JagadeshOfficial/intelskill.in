@@ -12,6 +12,7 @@ import {
   Calendar,
   Terminal,
   Library,
+  Video,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,7 +22,7 @@ const navLinks = [
   { href: '/student/assignments', label: 'Assignments', icon: Calendar },
   { href: '/student/tests', label: 'Online Tests', icon: PenSquare },
   { href: '/student/compiler', label: 'Practice', icon: Terminal },
-  { href: '/student/sessions', label: 'Live Sessions', icon: Calendar },
+  { href: '/student/sessions', label: 'Online Sessions', icon: Video },
 ]
 
 export function StudentSidebar() {

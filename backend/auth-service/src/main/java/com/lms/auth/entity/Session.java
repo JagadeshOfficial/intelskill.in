@@ -6,38 +6,59 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "sessions")
 public class Session {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
 
-    @Column(length = 1000)
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
-    private Course course;
+    @Column(nullable = false)
+    private String sessionLink;
 
-    @ManyToOne
-    @JoinColumn(name = "batch_id")
-    private Batch batch;
-
-    @ManyToOne
-    @JoinColumn(name = "tutor_id")
-    private Tutor tutor;
-
+    @Column(nullable = false)
     private LocalDateTime startTime;
+
+    @Column(nullable = false)
     private LocalDateTime endTime;
 
-    private String meetingLink;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "tutor_id", nullable = false)
+    private Tutor tutor;
 
-    private String status; // SCHEDULED, COMPLETED, CANCELLED
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "batch_id", nullable = false)
+    private Batch batch;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    public Session() {
+    }
+
+    public Session(String title, String description, String sessionLink, LocalDateTime startTime, LocalDateTime endTime,
+            Tutor tutor, Batch batch) {
+        this.title = title;
+        this.description = description;
+        this.sessionLink = sessionLink;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.tutor = tutor;
+        this.batch = batch;
+    }
+
+    @PreUpdate
+    public void setLastUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -62,28 +83,12 @@ public class Session {
         this.description = description;
     }
 
-    public Course getCourse() {
-        return course;
+    public String getSessionLink() {
+        return sessionLink;
     }
 
-    public void setCourse(Course course) {
-        this.course = course;
-    }
-
-    public Batch getBatch() {
-        return batch;
-    }
-
-    public void setBatch(Batch batch) {
-        this.batch = batch;
-    }
-
-    public Tutor getTutor() {
-        return tutor;
-    }
-
-    public void setTutor(Tutor tutor) {
-        this.tutor = tutor;
+    public void setSessionLink(String sessionLink) {
+        this.sessionLink = sessionLink;
     }
 
     public LocalDateTime getStartTime() {
@@ -102,20 +107,20 @@ public class Session {
         this.endTime = endTime;
     }
 
-    public String getMeetingLink() {
-        return meetingLink;
+    public Tutor getTutor() {
+        return tutor;
     }
 
-    public void setMeetingLink(String meetingLink) {
-        this.meetingLink = meetingLink;
+    public void setTutor(Tutor tutor) {
+        this.tutor = tutor;
     }
 
-    public String getStatus() {
-        return status;
+    public Batch getBatch() {
+        return batch;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setBatch(Batch batch) {
+        this.batch = batch;
     }
 
     public LocalDateTime getCreatedAt() {

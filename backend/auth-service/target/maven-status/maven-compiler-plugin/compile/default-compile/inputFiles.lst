@@ -7,6 +7,7 @@ C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\AdminRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\StudentAuthController.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\BatchRepository.java
+C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\dto\SessionDTO.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\SessionRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\TutorApplicationController.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\Course.java
@@ -21,6 +22,7 @@ C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\TestRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\entity\Student.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\config\MailConfig.java
+C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\exception\GlobalExceptionHandler.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\FolderRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\SessionController.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\TestController.java
@@ -68,7 +70,6 @@ C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\controller\TutorContentQueryController.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\AssignmentRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\CourseRepository.java
-C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\dto\SessionRequest.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\service\BatchStudentService.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\repository\OtpStorageRepository.java
 C:\Users\DELL\.gemini\antigravity\Learn_Flow_Full\backend\auth-service\src\main\java\com\lms\auth\service\SessionService.java

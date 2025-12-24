@@ -1,180 +1,350 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Trash2, Calendar, Link as LinkIcon, ExternalLink } from 'lucide-react'
-import { getSessionsForTutor, deleteSession, Session } from '@/lib/api-sessions'
-import { useToast } from '@/hooks/use-toast'
-import { format } from 'date-fns'
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Calendar, Clock, Video, Plus, Link as LinkIcon, Users } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+
+interface Session {
+    id: number
+    title: string
+    description: string
+    sessionLink: string
+    startTime: string
+    endTime: string
+    batchName: string
+    tutorName: string
+    batchId: number
+    tutorId: number
+}
+
+interface Batch {
+    id: number
+    name: string
+    courseId: number
+}
 
 export default function TutorSessionsPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+    const [sessions, setSessions] = useState<Session[]>([])
+    const [batches, setBatches] = useState<Batch[]>([])
+    const [isCreateOpen, setIsCreateOpen] = useState(false)
+    const [loading, setLoading] = useState(true)
+    const [tutorId, setTutorId] = useState<number | null>(null)
 
-  useEffect(() => {
-    loadSessions()
-  }, [])
+    // Form State
+    const [newSession, setNewSession] = useState({
+        title: '',
+        description: '',
+        startTime: '',
+        duration: '60', // minutes
+        sessionLink: '',
+        batchId: '',
+    })
 
-  const loadSessions = async () => {
-    try {
-      const tutorId = localStorage.getItem('tutorId')
-      if (!tutorId) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Tutor ID not found. Please log in again.",
-        })
-        router.push('/login')
-        return
-      }
+    useEffect(() => {
+        fetchUserData()
+    }, [])
 
-      setIsLoading(true)
-      const data = await getSessionsForTutor(Number(tutorId))
-      setSessions(data)
-    } catch (error) {
-      console.error('Failed to load sessions:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load sessions",
-      })
-    } finally {
-      setIsLoading(false)
+    useEffect(() => {
+        if (tutorId) {
+            fetchSessions()
+            fetchBatches()
+        }
+    }, [tutorId])
+
+    const fetchUserData = async () => {
+        try {
+            const token = localStorage.getItem("tutorToken");
+            const res = await fetch('http://localhost:8081/api/v1/tutor/me', {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                setTutorId(data.id)
+            }
+        } catch (error) {
+            console.error("Failed to fetch user data", error)
+        }
     }
-  }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this session?')) return
-
-    try {
-      await deleteSession(id)
-      toast({
-        title: "Success",
-        description: "Session deleted successfully",
-      })
-      // Reload to reflect changes
-      loadSessions()
-    } catch (error) {
-      console.error('Failed to delete session:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete session",
-      })
+    const fetchSessions = async () => {
+        if (!tutorId) return
+        try {
+            const token = localStorage.getItem("tutorToken");
+            const res = await fetch(`http://localhost:8081/sessions/tutor/${tutorId}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                setSessions(data)
+            }
+        } catch (error) {
+            console.error('Failed to fetch sessions', error)
+        } finally {
+            setLoading(false)
+        }
     }
-  }
 
-  return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Sessions</h1>
-          <p className="text-muted-foreground">
-            Manage your scheduled classes.
-          </p>
-        </div>
-        <Link href="/tutor/sessions/create">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Schedule Session
-          </Button>
-        </Link>
-      </div>
+    const fetchBatches = async () => {
+        if (!tutorId) return
+        try {
+            const token = localStorage.getItem("tutorToken");
+            // Get courses for tutor (assuming this user is tutor)
+            const res = await fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const coursesData = await res.json()
+                const allBatches: Batch[] = []
+                coursesData.forEach((c: any) => {
+                    if (c.batches) {
+                        c.batches.forEach((b: any) => allBatches.push({ id: b.id, name: `${c.title} - ${b.name}`, courseId: c.id }))
+                    }
+                })
+                setBatches(allBatches)
+            }
+        } catch (error) {
+            console.error('Failed to fetch batches', error)
+        }
+    }
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming & Past Sessions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-8">Loading...</div>
-          ) : sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-              <Calendar className="h-12 w-12 mb-4 opacity-20" />
-              <p>No sessions found.</p>
-              <p className="text-sm">Schedule a new session to get started.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Course / Batch</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Meeting</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessions.map((session) => (
-                  <TableRow key={session.id}>
-                    <TableCell className="font-medium">
-                      {session.title}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{session.course.title}</span>
-                        <span className="text-xs text-muted-foreground">{session.batch.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col text-sm">
-                        <span>{format(new Date(session.startTime), 'MMM d, yyyy')}</span>
-                        <span className="text-muted-foreground">
-                          {format(new Date(session.startTime), 'h:mm a')} - {format(new Date(session.endTime), 'h:mm a')}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {session.meetingLink ? (
-                        <Button size="sm" variant="outline" className="h-8 gap-2" asChild>
-                          <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            Join
-                          </a>
+    const handleCreateSession = async () => {
+        try {
+            const token = localStorage.getItem("tutorToken");
+            const startTime = new Date(newSession.startTime)
+            const endTime = new Date(startTime.getTime() + parseInt(newSession.duration) * 60000)
+
+            const endDateTimeLocal = new Date(endTime.getTime() - endTime.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+
+            const payload = {
+                title: newSession.title,
+                description: newSession.description,
+                sessionLink: newSession.sessionLink,
+                startTime: newSession.startTime,
+                endTime: endDateTimeLocal,
+                batchId: parseInt(newSession.batchId),
+                tutorId: tutorId
+            }
+
+            const res = await fetch('http://localhost:8081/sessions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            })
+
+            if (res.ok) {
+                setIsCreateOpen(false)
+                fetchSessions()
+                setNewSession({
+                    title: '',
+                    description: '',
+                    startTime: '',
+                    duration: '60',
+                    sessionLink: '',
+                    batchId: '',
+                })
+                const errData = await res.json().catch(() => ({}));
+                console.error("Server Error:", errData);
+                alert(`Failed to create session: ${errData.message || res.statusText || "Unknown error"}`);
+            }
+        } catch (error) {
+            console.error('Failed to create session', error)
+            alert("An execution error occurred. Check console for details.");
+        }
+    }
+
+    const generateMeetingLink = () => {
+        const roomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const origin = window.location.origin;
+        setNewSession({ ...newSession, sessionLink: `${origin}/meeting/${roomId}` })
+    }
+
+    return (
+        <div className="p-8 max-w-7xl mx-auto space-y-8">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline tracking-tight">Online Sessions</h1>
+                    <p className="text-muted-foreground mt-2">Manage your upcoming classes</p>
+                </div>
+                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="gap-2">
+                            <Plus className="w-4 h-4" /> Schedule Class
                         </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No Link</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${session.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-800' :
-                        session.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                        {session.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(session.id)}
-                        className="text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>Schedule Class</DialogTitle>
+                            <DialogDescription>
+                                Create a new online session for your batch.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="title">Topic</Label>
+                                <Input
+                                    id="title"
+                                    placeholder="e.g., Week 4 Review"
+                                    value={newSession.title}
+                                    onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="desc">Description (Optional)</Label>
+                                <Textarea
+                                    id="desc"
+                                    placeholder="Details about the session..."
+                                    value={newSession.description}
+                                    onChange={(e) => setNewSession({ ...newSession, description: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="start">Start Time</Label>
+                                    <Input
+                                        id="start"
+                                        type="datetime-local"
+                                        value={newSession.startTime}
+                                        onChange={(e) => setNewSession({ ...newSession, startTime: e.target.value })}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="duration">Duration</Label>
+                                    <Select
+                                        value={newSession.duration}
+                                        onValueChange={(val) => setNewSession({ ...newSession, duration: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select duration" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="30">30 min</SelectItem>
+                                            <SelectItem value="45">45 min</SelectItem>
+                                            <SelectItem value="60">1 hour</SelectItem>
+                                            <SelectItem value="90">1.5 hours</SelectItem>
+                                            <SelectItem value="120">2 hours</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="batch">Batch</Label>
+                                <Select
+                                    value={newSession.batchId}
+                                    onValueChange={(val) => setNewSession({ ...newSession, batchId: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Batch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {batches.map(b => (
+                                            <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="link">Meeting Link</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="link"
+                                        placeholder="https://zoom.us/..."
+                                        value={newSession.sessionLink}
+                                        onChange={(e) => setNewSession({ ...newSession, sessionLink: e.target.value })}
+                                    />
+                                    <Button type="button" variant="outline" onClick={generateMeetingLink}>
+                                        Generate Meeting ID
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleCreateSession}>Schedule</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {loading ? (
+                    <div className="col-span-full text-center py-10 text-muted-foreground">Loading sessions...</div>
+                ) : sessions.length === 0 ? (
+                    <div className="col-span-full text-center py-10">
+                        <div className="flex justify-center mb-4">
+                            <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                        </div>
+                        <h3 className="text-lg font-medium">No sessions scheduled</h3>
+                        <p className="text-muted-foreground">You haven't scheduled any classes yet.</p>
+                    </div>
+                ) : (
+                    sessions.map(session => (
+                        <Card key={session.id} className="overflow-hidden border-l-4 border-l-primary hover:shadow-md transition-shadow">
+                            <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start">
+                                    <Badge variant="secondary" className="mb-2">
+                                        {session.batchName}
+                                    </Badge>
+                                    <Badge variant={new Date(session.endTime) < new Date() ? "outline" : "default"}>
+                                        {new Date(session.endTime) < new Date() ? "Ended" : "Upcoming"}
+                                    </Badge>
+                                </div>
+                                <CardTitle className="line-clamp-1 text-lg">{session.title}</CardTitle>
+                                <CardDescription className="line-clamp-2 min-h-[2.5rem]">{session.description || "No description provided."}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock className="w-4 h-4" />
+                                    <span>
+                                        {new Date(session.startTime).toLocaleDateString()} • {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Users className="w-4 h-4" />
+                                    <span>{session.batchName}</span>
+                                </div>
+
+                                <Button className="w-full mt-2 gap-2" variant="outline" asChild>
+                                    <a href={session.sessionLink} target="_blank" rel="noopener noreferrer">
+                                        <Video className="w-4 h-4" /> Start Meeting
+                                    </a>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+        </div>
+    )
 }

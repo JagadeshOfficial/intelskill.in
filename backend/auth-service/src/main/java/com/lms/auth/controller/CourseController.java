@@ -213,6 +213,23 @@ public class CourseController {
                 studentCourses.add(course);
             }
         }
+        // Force initialization for serialization
+        for (Course c : studentCourses) {
+            if (c.getBatches() == null) {
+                c.setBatches(new java.util.ArrayList<>());
+            } else {
+                // Trigger lazy loading if necessary or just ensure they are valid for
+                // serialization
+                c.getBatches().size();
+                for (Batch b : c.getBatches()) {
+                    if (b.getStudents() == null) {
+                        b.setStudents(new java.util.ArrayList<>());
+                    } else {
+                        b.getStudents().size(); // Trigger lazy load
+                    }
+                }
+            }
+        }
         return studentCourses;
     }
 
