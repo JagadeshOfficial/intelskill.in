@@ -34,16 +34,18 @@ public class NotificationService {
 
     public Notification handleTutorAction(Integer notificationId, String action) {
         Notification n = notificationRepository.findById(notificationId)
-            .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
         Tutor tutor = tutorRepository.findById(n.getTutorId())
-            .orElseThrow(() -> new RuntimeException("Tutor not found"));
+                .orElseThrow(() -> new RuntimeException("Tutor not found"));
         if ("ACCEPT".equalsIgnoreCase(action)) {
             tutor.setStatus("APPROVED");
             tutorRepository.save(tutor);
             n.setStatus("ACCEPTED");
             try {
                 String subject = "Your Tutor Application is Approved";
-                String body = String.format("Hello %s,\n\nYour tutor application has been approved. You can now log in and complete your profile.\n\nRegards,\nLMS Team", tutor.getFirstName() != null ? tutor.getFirstName() : "");
+                String body = String.format(
+                        "Hello %s,\n\nYour tutor application has been approved. You can now log in and complete your profile.\n\nRegards,\nLMS Team",
+                        tutor.getFirstName() != null ? tutor.getFirstName() : "");
                 emailService.sendSimpleEmail(tutor.getEmail(), subject, body);
             } catch (Exception e) {
                 // Log and continue
@@ -55,7 +57,9 @@ public class NotificationService {
             n.setStatus("REJECTED");
             try {
                 String subject = "Your Tutor Application Status";
-                String body = String.format("Hello %s,\n\nWe are sorry to inform you that your tutor application was rejected. For more information, please contact support.\n\nRegards,\nLMS Team", tutor.getFirstName() != null ? tutor.getFirstName() : "");
+                String body = String.format(
+                        "Hello %s,\n\nWe are sorry to inform you that your tutor application was rejected. For more information, please contact support.\n\nRegards,\nLMS Team",
+                        tutor.getFirstName() != null ? tutor.getFirstName() : "");
                 emailService.sendSimpleEmail(tutor.getEmail(), subject, body);
             } catch (Exception e) {
                 logger.error("Failed to send rejection email: {}", e.getMessage(), e);
@@ -63,5 +67,10 @@ public class NotificationService {
         }
         n.setIsRead(true);
         return notificationRepository.save(n);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteNotificationsForTutor(Integer tutorId) {
+        notificationRepository.deleteByTutorId(tutorId);
     }
 }

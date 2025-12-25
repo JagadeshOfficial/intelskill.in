@@ -400,7 +400,7 @@ public class AdminAuthController {
         } catch (Exception e) {
             log.error("Error deleting tutor: {}", e.getMessage());
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(java.util.Map.of("success", false, "message", "Failed to delete tutor"));
+                    .body(java.util.Map.of("success", false, "message", "Failed to delete tutor: " + e.getMessage()));
         }
     }
 

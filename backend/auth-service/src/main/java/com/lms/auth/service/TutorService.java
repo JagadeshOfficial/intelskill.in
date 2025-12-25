@@ -152,6 +152,15 @@ public class TutorService {
                     // Log and continue; deletion of file should not prevent tutor deletion
                 }
             }
+
+            // Delete related notifications first
+            try {
+                notificationService.deleteNotificationsForTutor(tutorId);
+            } catch (Exception e) {
+                // Log but continue if possible, or rethrow if strict
+                System.out.println("Error deleting notifications: " + e.getMessage());
+            }
+
             tutorRepository.deleteById(tutorId);
             return;
         }

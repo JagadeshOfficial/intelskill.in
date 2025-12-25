@@ -8,4 +8,6 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
     List<Notification> findByTypeOrderByCreatedAtDesc(String type);
+
+    void deleteByTutorId(Integer tutorId);
 }
