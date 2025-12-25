@@ -50,13 +50,21 @@ public class CourseController {
     }
 
     @PostMapping
-    public org.springframework.http.ResponseEntity<?> createCourse(@RequestBody Course course) {
+    public org.springframework.http.ResponseEntity<?> createCourse(@RequestBody java.util.Map<String, String> payload) {
         try {
-            if (course.getTitle() == null || course.getTitle().trim().isEmpty()) {
+            String title = payload.get("title");
+            String description = payload.get("description");
+
+            if (title == null || title.trim().isEmpty()) {
                 return org.springframework.http.ResponseEntity.badRequest()
                         .body(java.util.Map.of("message", "Course title cannot be empty"));
             }
-            System.out.println("Received request to create course: " + course.getTitle());
+
+            Course course = new Course();
+            course.setTitle(title);
+            course.setDescription(description);
+
+            System.out.println("Received request to create course: " + title);
             Course saved = courseRepository.save(course);
             System.out.println("Course saved successfully with ID: " + saved.getId());
             return org.springframework.http.ResponseEntity.ok(saved);
