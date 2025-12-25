@@ -9,26 +9,29 @@ export function AdminHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [confirm, setConfirm] = useState<{id:number,action:string}|null>(null);
+  const [confirm, setConfirm] = useState<{ id: number, action: string } | null>(null);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
   useEffect(() => {
     if (showNotifications) {
       setLoading(true);
-      fetch('/api/v1/auth/admin/notifications')
+      fetch(`${API_BASE_URL}/api/v1/auth/admin/notifications`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+      })
         .then(res => res.json())
         .then(data => setNotifications(Array.isArray(data) ? data : (data.notifications || [])))
         .finally(() => setLoading(false));
     }
   }, [showNotifications]);
 
-  const handleAction = async (id:number, action:string) => {
+  const handleAction = async (id: number, action: string) => {
     setConfirm(null);
-    await fetch(`/api/v1/auth/admin/notifications/${id}/action`, {
+    await fetch(`${API_BASE_URL}/api/v1/auth/admin/notifications/${id}/action`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
       body: JSON.stringify({ action }),
     });
-    setNotifications(notifications.filter((n:any) => n.id !== id));
+    setNotifications(notifications.filter((n: any) => n.id !== id));
   };
 
   return (
@@ -50,13 +53,13 @@ export function AdminHeader() {
             <h4 className="p-4 font-bold">Notifications</h4>
             <ul>
               {loading ? <li className="p-4">Loading...</li> : null}
-              {notifications.map((n:any) => (
+              {notifications.map((n: any) => (
                 <li key={n.id} className="p-4 border-b">
                   <div>{n.message}</div>
                   {n.status === 'PENDING' && (
                     <div className="mt-2 flex gap-2">
-                      <Button size="sm" className="bg-green-500 text-white" onClick={() => setConfirm({id:n.id,action:'ACCEPT'})}>Accept</Button>
-                      <Button size="sm" className="bg-red-500 text-white" onClick={() => setConfirm({id:n.id,action:'REJECT'})}>Reject</Button>
+                      <Button size="sm" className="bg-green-500 text-white" onClick={() => setConfirm({ id: n.id, action: 'ACCEPT' })}>Accept</Button>
+                      <Button size="sm" className="bg-red-500 text-white" onClick={() => setConfirm({ id: n.id, action: 'REJECT' })}>Reject</Button>
                     </div>
                   )}
                 </li>
