@@ -36,7 +36,7 @@ export default function StudentAssignmentsPage() {
             if (!token) return;
 
             // Fetch profile to get email
-            const profileRes = await fetch('http://localhost:8081/api/v1/student/me', {
+            const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/v1/student/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const profile = await profileRes.json()

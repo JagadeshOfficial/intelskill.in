@@ -40,7 +40,7 @@ export default function TestTakerPage() {
 
                 if (token) {
                     try {
-                        const profileRes = await fetch('http://localhost:8081/api/v1/student/me', {
+                        const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/v1/student/me`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
                         if (profileRes.ok) {
