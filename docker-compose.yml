@@ -12,7 +12,7 @@ services:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:8081
-      - NEXT_PUBLIC_BACKEND_URL=http://68.178.160.230:8081
+      - NEXT_PUBLIC_API_URL=http://68.178.160.230:8081
     depends_on:
       - backend
     networks:
