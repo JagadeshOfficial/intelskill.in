@@ -81,7 +81,7 @@ export default function TutorSessionsPage() {
     const fetchUserData = async () => {
         try {
             const token = localStorage.getItem("tutorToken");
-            const res = await fetch('http://localhost:8081/api/v1/tutor/me', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/v1/tutor/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
             if (res.ok) {
@@ -97,7 +97,7 @@ export default function TutorSessionsPage() {
         if (!tutorId) return
         try {
             const token = localStorage.getItem("tutorToken");
-            const res = await fetch(`http://localhost:8081/sessions/tutor/${tutorId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/sessions/tutor/${tutorId}`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }
@@ -118,7 +118,7 @@ export default function TutorSessionsPage() {
         try {
             const token = localStorage.getItem("tutorToken");
             // Get courses for tutor (assuming this user is tutor)
-            const res = await fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses/tutors/${tutorId}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
             if (res.ok) {
@@ -154,7 +154,7 @@ export default function TutorSessionsPage() {
                 tutorId: tutorId
             }
 
-            const res = await fetch('http://localhost:8081/sessions', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/sessions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

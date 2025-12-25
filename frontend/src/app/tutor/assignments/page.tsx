@@ -78,7 +78,7 @@ export default function TutorAssignmentsPage() {
             const [asgData, subData, studentRes] = await Promise.all([
                 getAssignments(undefined, courseTitles),
                 getSubmissions(),
-                fetch('http://localhost:8081/api/v1/auth/admin/students')
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/v1/auth/admin/students`)
             ])
             setAssignments(Array.isArray(asgData) ? asgData : [])
             setSubmissions(Array.isArray(subData) ? subData.filter(s => s.itemType === 'Assignment') : [])

@@ -83,8 +83,8 @@ export default function TutorContentPage() {
   useEffect(() => {
     const tutorId = localStorage.getItem('tutorId');
     const url = tutorId
-      ? `http://localhost:8081/api/courses/tutors/${tutorId}`
-      : 'http://localhost:8081/api/courses';
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses/tutors/${tutorId}`
+      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses`;
 
     fetch(url)
       .then(res => res.json())
@@ -191,7 +191,7 @@ export default function TutorContentPage() {
     const tutorId = localStorage.getItem('tutorId');
     if (!tutorId) return;
     try {
-      const res = await fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses/tutors/${tutorId}`);
       const data = await res.json();
       setMyCourses(Array.isArray(data) ? data : []);
     } catch (e) { console.error("Failed to fetch my courses", e); }
@@ -204,11 +204,11 @@ export default function TutorContentPage() {
     if (!tutorId) return;
     try {
       // DELETE /api/courses/{courseId}/tutors/{tutorId}
-      await fetch(`http://localhost:8081/api/courses/${courseId}/tutors/${tutorId}`, { method: 'DELETE' });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses/${courseId}/tutors/${tutorId}`, { method: 'DELETE' });
       toast({ title: "Course Removed", description: "You have been unassigned from this course." });
       fetchMyCourses(); // Refresh local list
       // Refresh main course selection list if needed
-      const url = `http://localhost:8081/api/courses/tutors/${tutorId}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses/tutors/${tutorId}`;
       fetch(url).then(res => res.json()).then(data => setCourses(Array.isArray(data) ? data : []));
     } catch (e) {
       toast({ title: "Error", description: "Failed to remove course.", variant: "destructive" });
