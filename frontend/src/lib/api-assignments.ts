@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8081/api/assignments";
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/assignments`;
 
 export async function getAssignments(creatorId?: string, courses?: string[]): Promise<any[]> {
     try {

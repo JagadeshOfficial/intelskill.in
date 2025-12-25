@@ -277,7 +277,7 @@ export default function AdminCoursesPage() {
       async function fetchStudents() {
         setLoadingStudents(true);
         try {
-          const res = await fetch("http://localhost:8081/api/v1/auth/admin/students");
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/api/v1/auth/admin/students`);
           if (!res.ok) throw new Error("Failed to fetch students");
           const data = await res.json();
           const arr = Array.isArray(data) ? data : data.students || [];

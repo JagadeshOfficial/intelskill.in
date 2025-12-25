@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8081/api/submissions";
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/submissions`;
 
 export async function getSubmissions(): Promise<any[]> {
     try {

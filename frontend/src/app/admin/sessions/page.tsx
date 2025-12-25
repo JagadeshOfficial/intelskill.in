@@ -85,7 +85,7 @@ export default function AdminSessionsPage() {
         try {
             const token = localStorage.getItem("adminToken");
             // Using auth-service URL (8081)
-            const res = await fetch('http://localhost:8081/sessions', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/sessions`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }
@@ -107,7 +107,7 @@ export default function AdminSessionsPage() {
             const headers = { "Authorization": `Bearer ${token}` };
 
             // Fetch Courses to get Batches
-            const coursesRes = await fetch('http://localhost:8081/api/courses', { headers })
+            const coursesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/api/courses`, { headers })
             if (coursesRes.ok) {
                 const coursesData = await coursesRes.json()
                 setCourses(coursesData)
@@ -122,7 +122,7 @@ export default function AdminSessionsPage() {
             }
 
             // Fetch Tutors
-            const tutorsRes = await fetch('http://localhost:8081/api/v1/auth/admin/tutors', { headers })
+            const tutorsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/api/v1/auth/admin/tutors`, { headers })
             if (tutorsRes.ok) {
                 const tutorsData = await tutorsRes.json()
                 setTutors(tutorsData.tutors)
@@ -152,8 +152,8 @@ export default function AdminSessionsPage() {
             }
 
             const url = editingSessionId
-                ? `http://localhost:8081/sessions/${editingSessionId}`
-                : 'http://localhost:8081/sessions';
+                ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/sessions/${editingSessionId}`
+                : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/sessions`;
 
             const method = editingSessionId ? 'PUT' : 'POST';
 
@@ -195,7 +195,7 @@ export default function AdminSessionsPage() {
         if (!confirm("Are you sure you want to delete this session?")) return;
         try {
             const token = localStorage.getItem("adminToken");
-            const res = await fetch(`http://localhost:8081/sessions/${id}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/sessions/${id}`, {
                 method: 'DELETE',
                 headers: { "Authorization": `Bearer ${token}` }
             })
