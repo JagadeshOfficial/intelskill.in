@@ -36,7 +36,7 @@ public class DataInitializer {
             if (adminRepository.findByEmail("intelskill.ad9014@gmail.com").isEmpty()) {
                 Admin admin = new Admin();
                 admin.setEmail("intelskill.ad9014@gmail.com");
-                // Password: admin123 (bcrypt hashed - for development only!)
+                // Password: Intel@123
                 admin.setPasswordHash(passwordEncoder.encode("Intel@123"));
                 // These should match your database's first admin
                 admin.setFirstName("System");
