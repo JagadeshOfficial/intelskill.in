@@ -49,12 +49,12 @@ export default function TutorCoursesPage() {
   // Fetch courses from backend when tutorId is available
   useEffect(() => {
     if (tutorId) {
-      fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+      fetch(`${apiUrl}/api/courses/tutors/${tutorId}`)
         .then(res => res.json())
         .then(data => setTutorCourses(Array.isArray(data) ? data : []));
     }
   }, [tutorId]);
-
 
   // Fetch batches for manage batches modal
   useEffect(() => {
@@ -68,18 +68,19 @@ export default function TutorCoursesPage() {
     }
   }, [manageBatchesCourse]);
 
-  // Fetch students for selected batch with error handling (SQL-based endpoint)
+  // Set students from selected batch (using loaded batches data)
   useEffect(() => {
-    if (manageBatchesCourse && selectedBatchId) {
-      fetch(`http://localhost:8081/api/tutor/courses/${manageBatchesCourse.id}/batches/${selectedBatchId}/students`)
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch students');
-          return res.json();
-        })
-        .then(students => setBatchStudents(Array.isArray(students) ? students : []))
-        .catch(() => setBatchStudents([]));
+    if (manageBatchesCourse && selectedBatchId && batches.length > 0) {
+      const batch = batches.find((b: any) => String(b.id) === String(selectedBatchId));
+      if (batch && batch.students) {
+        setBatchStudents(batch.students);
+      } else {
+        setBatchStudents([]);
+      }
+    } else {
+      setBatchStudents([]);
     }
-  }, [manageBatchesCourse, selectedBatchId]);
+  }, [manageBatchesCourse, selectedBatchId, batches]);
 
   // Main content rendering
   return (
@@ -126,7 +127,6 @@ export default function TutorCoursesPage() {
                         setBatches([]);
                         setBatchStudents([]);
                         setSelectedBatchId(null);
-                        setStudentSearch("");
                         setStudentSearch("");
                       }} />
                       <div className="relative bg-card text-card-foreground rounded-xl shadow-2xl p-0 w-full max-w-2xl z-10 border overflow-hidden flex flex-col max-h-[90vh]">
@@ -218,7 +218,6 @@ export default function TutorCoursesPage() {
                             setBatchStudents([]);
                             setSelectedBatchId(null);
                             setStudentSearch("");
-                            setStudentSearch("");
                           }}>Close</Button>
                         </div>
                       </div>
@@ -232,10 +231,8 @@ export default function TutorCoursesPage() {
         </div>
       </div >
 
-      {/* ...existing code for Add Course Modal... */}
       {
         showAddModal && (
-          // ...existing code for Add Course Modal...
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={() => setShowAddModal(false)} />
             <div className="relative bg-card rounded p-6 w-full max-w-md z-10">
@@ -316,7 +313,8 @@ export default function TutorCoursesPage() {
                     image: newCourseImage || undefined
                   };
                   try {
-                    const res = await fetch('http://localhost:8081/courses', {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+                    const res = await fetch(`${apiUrl}/api/courses`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(courseData)
@@ -331,6 +329,12 @@ export default function TutorCoursesPage() {
                     setNewCourseImageName(null);
                     setShowAddModal(false);
                     // Optionally, reload the page or refetch courses here
+                    // Recalculate effect?
+                    if (tutorId) {
+                      fetch(`${apiUrl}/api/courses/tutors/${tutorId}`)
+                        .then(res => res.json())
+                        .then(data => setTutorCourses(Array.isArray(data) ? data : []));
+                    }
                   } catch (err) {
                     alert('Error adding course. Please check your backend and network.');
                   }
@@ -340,8 +344,6 @@ export default function TutorCoursesPage() {
           </div>
         )
       }
-
-      {/* ...existing code for course cards and list... */}
     </div >
   );
 }
