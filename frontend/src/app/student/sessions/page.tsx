@@ -53,7 +53,7 @@ export default function StudentSessionsPage() {
                 setLoading(false);
                 return;
             }
-            const res = await fetch('http://localhost:8081/api/v1/student/me', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/v1/student/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
             if (res.ok) {
@@ -75,7 +75,7 @@ export default function StudentSessionsPage() {
             const token = localStorage.getItem("studentToken");
             // 1. Get Student Courses
             console.log("Fetching courses for student:", studentEmail);
-            const coursesRes = await fetch(`http://localhost:8081/api/courses/student/${studentEmail}`, {
+            const coursesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/courses/student/${studentEmail}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
 
@@ -126,7 +126,7 @@ export default function StudentSessionsPage() {
                 // 3. Fetch Sessions for each batch
                 const allSessions: Session[] = []
                 for (const batchId of Array.from(batchIds)) {
-                    const sessionRes = await fetch(`http://localhost:8081/sessions/batch/${batchId}`, {
+                    const sessionRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/sessions/batch/${batchId}`, {
                         headers: { "Authorization": `Bearer ${token}` }
                     })
                     if (sessionRes.ok) {
