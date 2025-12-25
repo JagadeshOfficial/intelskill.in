@@ -173,12 +173,15 @@ public class TutorAuthController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            System.out.println("Registering tutor: " + request.getEmail());
             Tutor tutor = tutorService.registerTutor(request);
             response.put("success", true);
             response.put("message", "Tutor registered successfully. Pending admin approval.");
             response.put("tutorId", tutor.getId());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.out.println("Error registering tutor: " + e.getMessage());
+            e.printStackTrace();
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);

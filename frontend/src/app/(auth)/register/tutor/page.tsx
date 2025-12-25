@@ -180,7 +180,7 @@ export default function TutorRegisterPage() {
         <div className="w-full h-full lg:grid lg:grid-cols-2">
             <div className="hidden lg:flex items-center justify-center bg-muted/50 p-10">
                 <div className='relative w-full h-full'>
-                    <Image 
+                    <Image
                         src={tutorRegisterImage.imageUrl}
                         alt={tutorRegisterImage.description}
                         data-ai-hint={tutorRegisterImage.imageHint}
@@ -289,13 +289,16 @@ export default function TutorRegisterPage() {
                     {/* Step 3: Tutor Details */}
                     {step === 'details' && (
                         <form onSubmit={handleRegister}>
-                            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-                                {error && (
+                            {error && (
+                                <div className="px-6 pb-2">
                                     <Alert variant="destructive">
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertDescription>{error}</AlertDescription>
                                     </Alert>
-                                )}
+                                </div>
+                            )}
+                            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="space-y-2">
                                         <Label htmlFor="firstName">First Name *</Label>
