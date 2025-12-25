@@ -1,17 +1,19 @@
 // Example API integration for frontend (React/Next.js)
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+
 export async function getCourses(): Promise<any> {
-  const res = await fetch("http://localhost:8081/api/courses");
+  const res = await fetch(`${API_URL}/api/courses`);
   return res.json();
 }
 
 export async function getCoursesForTutor(tutorId: string | number): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/tutors/${tutorId}`);
+  const res = await fetch(`${API_URL}/api/courses/tutors/${tutorId}`);
   return res.json();
 }
 
 export async function createCourse(course: { title: string; description: string }): Promise<any> {
-  const res = await fetch("http://localhost:8081/api/courses", {
+  const res = await fetch(`${API_URL}/api/courses`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(course),
@@ -20,12 +22,12 @@ export async function createCourse(course: { title: string; description: string 
 }
 
 export async function getBatches(courseId: string | number): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches`);
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/batches`);
   return res.json();
 }
 
 export async function createBatch(courseId: string | number, batch: { name: string }): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/batches`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(batch),
@@ -35,7 +37,7 @@ export async function createBatch(courseId: string | number, batch: { name: stri
 
 // Delete a batch
 export async function deleteBatch(courseId: string | number, batchId: string | number): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/batches/${batchId}`, {
     method: "DELETE",
   });
   return res.json();
@@ -43,7 +45,7 @@ export async function deleteBatch(courseId: string | number, batchId: string | n
 
 // Update (rename) a batch
 export async function updateBatch(courseId: string | number, batchId: string | number, updated: { name?: string }): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/batches/${batchId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updated),
@@ -52,7 +54,7 @@ export async function updateBatch(courseId: string | number, batchId: string | n
 }
 
 export async function addStudentToBatch(courseId: string | number, batchId: string | number, email: string): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}/students`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/batches/${batchId}/students`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(email),
@@ -61,7 +63,7 @@ export async function addStudentToBatch(courseId: string | number, batchId: stri
 }
 
 export async function removeStudentFromBatch(courseId: string | number, batchId: string | number, email: string): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/batches/${batchId}/students/${email}`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/batches/${batchId}/students/${email}`, {
     method: "DELETE"
   });
   return res.json();
@@ -69,7 +71,7 @@ export async function removeStudentFromBatch(courseId: string | number, batchId:
 
 // Delete a course
 export async function deleteCourse(courseId: string | number): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}`, {
     method: "DELETE"
   });
   return res.json();
@@ -77,7 +79,7 @@ export async function deleteCourse(courseId: string | number): Promise<any> {
 
 // Update (rename) a course
 export async function updateCourse(courseId: string | number, updatedCourse: { title?: string; description?: string }): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updatedCourse),
@@ -86,6 +88,6 @@ export async function updateCourse(courseId: string | number, updatedCourse: { t
 }
 // Get tutors for a specific course
 export async function getTutorsForCourse(courseId: string | number): Promise<any> {
-  const res = await fetch(`http://localhost:8081/api/courses/${courseId}/tutors`);
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/tutors`);
   return res.json();
 }
