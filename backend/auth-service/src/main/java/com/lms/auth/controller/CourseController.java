@@ -50,14 +50,21 @@ public class CourseController {
     }
 
     @PostMapping
-    public Course createCourse(@RequestBody Course course) {
-        if (course.getTitle() == null || course.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("Course title cannot be empty");
+    public org.springframework.http.ResponseEntity<?> createCourse(@RequestBody Course course) {
+        try {
+            if (course.getTitle() == null || course.getTitle().trim().isEmpty()) {
+                return org.springframework.http.ResponseEntity.badRequest()
+                        .body(java.util.Map.of("message", "Course title cannot be empty"));
+            }
+            System.out.println("Received request to create course: " + course.getTitle());
+            Course saved = courseRepository.save(course);
+            System.out.println("Course saved successfully with ID: " + saved.getId());
+            return org.springframework.http.ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return org.springframework.http.ResponseEntity.status(500)
+                    .body(java.util.Map.of("message", "Failed to save course: " + e.getMessage()));
         }
-        System.out.println("Received request to create course: " + course.getTitle());
-        Course saved = courseRepository.save(course);
-        System.out.println("Course saved successfully with ID: " + saved.getId());
-        return saved;
     }
 
     @GetMapping("/{courseId}/batches")

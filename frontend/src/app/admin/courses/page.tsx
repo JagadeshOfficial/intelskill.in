@@ -121,8 +121,10 @@ export default function AdminCoursesPage() {
         setFilteredCourses(updated); // Update filtered list too
         setShowCreateCourse(false);
         toast({ title: "Success", description: "Course created successfully!" });
-      } catch (err) {
-        toast({ title: "Error", description: "Failed to create course.", variant: "destructive" });
+      } catch (err: any) {
+        console.error(err);
+        const msg = err.message || "Failed to create course.";
+        toast({ title: "Error", description: msg, variant: "destructive" });
       } finally {
         setIsSubmitting(false);
       }
