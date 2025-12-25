@@ -51,6 +51,9 @@ public class CourseController {
 
     @PostMapping
     public Course createCourse(@RequestBody Course course) {
+        if (course.getTitle() == null || course.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Course title cannot be empty");
+        }
         System.out.println("Received request to create course: " + course.getTitle());
         Course saved = courseRepository.save(course);
         System.out.println("Course saved successfully with ID: " + saved.getId());

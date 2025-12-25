@@ -94,8 +94,8 @@ export default function AdminCoursesPage() {
       setFilteredCourses(
         courses.filter(
           (c) =>
-            c.title.toLowerCase().includes(lower) ||
-            c.description.toLowerCase().includes(lower)
+            (c.title?.toLowerCase() || "").includes(lower) ||
+            (c.description?.toLowerCase() || "").includes(lower)
         )
       );
     }
@@ -113,6 +113,9 @@ export default function AdminCoursesPage() {
       setIsSubmitting(true);
       try {
         const newCourse = await createCourse({ title, description });
+        if (!newCourse || !newCourse.id) {
+          throw new Error("Invalid response from server");
+        }
         const updated = [...courses, newCourse];
         setCourses(updated);
         setFilteredCourses(updated); // Update filtered list too
