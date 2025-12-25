@@ -108,12 +108,12 @@ export default function AssignmentsPage() {
                 setSubmissions(Array.isArray(subData) ? subData.filter(s => s.itemType === 'Assignment') : [])
 
                 // Fetch Tutors for delegation
-                const tutorRes = await fetch('http://localhost:8081/api/v1/auth/admin/tutors')
+                const tutorRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/api/v1/auth/admin/tutors`)
                 const tutorData = await tutorRes.json()
                 setTutors(tutorData.tutors || [])
 
                 // Fetch Students for pending list
-                const studentRes = await fetch('http://localhost:8081/api/v1/auth/admin/students')
+                const studentRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/api/v1/auth/admin/students`)
                 const studentData = await studentRes.json()
                 setStudents(studentData.students || [])
             } catch (error) {
