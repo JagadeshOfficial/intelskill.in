@@ -9,7 +9,7 @@ COPY pom.xml /app/
 # Copy the source code
 COPY src /app/src
 
-# Build the application
+# Build the application 
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application

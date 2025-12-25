@@ -44,7 +44,7 @@ public class CourseController {
             return courses;
         } catch (Exception e) {
             e.printStackTrace();
-            return List.of();
+            throw new RuntimeException("Failed to fetch courses: " + e.getMessage());
         }
     }
 
