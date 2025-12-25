@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/courses")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" })
+@CrossOrigin(origins = "*")
 public class CourseController {
     @Autowired
     private CourseRepository courseRepository;
@@ -50,7 +50,10 @@ public class CourseController {
 
     @PostMapping
     public Course createCourse(@RequestBody Course course) {
-        return courseRepository.save(course);
+        System.out.println("Received request to create course: " + course.getTitle());
+        Course saved = courseRepository.save(course);
+        System.out.println("Course saved successfully with ID: " + saved.getId());
+        return saved;
     }
 
     @GetMapping("/{courseId}/batches")
