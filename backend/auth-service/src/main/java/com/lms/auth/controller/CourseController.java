@@ -41,6 +41,7 @@ public class CourseController {
                     }
                 }
             }
+            System.out.println("Returning " + courses.size() + " courses.");
             return courses;
         } catch (Exception e) {
             e.printStackTrace();
