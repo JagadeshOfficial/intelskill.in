@@ -74,7 +74,7 @@ export default function AdminContentPage() {
 
   // Fetch Courses
   useEffect(() => {
-    fetch('http://localhost:8081/api/courses')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"}/api/courses`)
       .then(res => res.json())
       .then(data => setCourses(Array.isArray(data) ? data : []));
   }, []);
