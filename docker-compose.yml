@@ -6,6 +6,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://68.178.160.230:8081
     container_name: learnflow-frontend
     restart: always
     ports:
