@@ -25,7 +25,7 @@ import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/v1/auth/admin")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" })
+@CrossOrigin(origins = "*")
 public class AdminAuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AdminAuthController.class);

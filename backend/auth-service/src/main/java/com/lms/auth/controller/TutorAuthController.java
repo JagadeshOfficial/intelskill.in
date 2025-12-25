@@ -21,7 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/tutor")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" }, maxAge = 3600)
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class TutorAuthController {
     /**
      * Get tutor info by email (for internal service use)
