@@ -27,4 +27,4 @@ COPY --from=build /app/target/auth-service-1.0.0.jar /app/auth-service.jar
 EXPOSE 8081
 
 # Command to run the application
-ENTRYPOINT ["java", "-jar", "/app/auth-service.jar"]
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "/app/auth-service.jar"]
