@@ -6,18 +6,17 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: dev
       args:
-        NEXT_PUBLIC_API_URL: http://68.178.160.230:8081
+        # Use HTTPS URL for the browser to avoid Mixed Content errors
+        NEXT_PUBLIC_API_URL: https://backend.intelskill.in
     container_name: learnflow-frontend
     restart: always
     ports:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:8081
-      - NEXT_PUBLIC_API_URL=http://68.178.160.230:8081
-      - NODE_ENV=development
-    command: npm run dev
+      # Update runtime env var as well
+      - NEXT_PUBLIC_API_URL=https://backend.intelskill.in
     depends_on:
       - backend
     networks:
