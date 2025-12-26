@@ -36,7 +36,7 @@ export function QuickSidebar() {
                     </div>
                     {isOpen && (
                         <span className="text-sm font-medium animate-in fade-in slide-in-from-left-2 duration-300">
-                            Community
+                            Forum
                         </span>
                     )}
                 </Link>
