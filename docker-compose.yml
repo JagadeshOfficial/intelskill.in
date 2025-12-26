@@ -3,7 +3,6 @@ version: '3.8'
 services:
   # Frontend Service (Next.js)
   frontend:
-    # Use the pre-built image from Docker Hub (Production)
     image: jagadeshvana/learnflow-frontend
     container_name: learnflow-frontend
     restart: always
@@ -12,6 +11,8 @@ services:
     environment:
       - BACKEND_URL=http://backend:8081
       - NEXT_PUBLIC_API_URL=https://backend.intelskill.in
+      # Limit Node.js memory to prevent crashes on small VPS
+      - NODE_OPTIONS="--max-old-space-size=512"
     depends_on:
       - backend
     networks:
