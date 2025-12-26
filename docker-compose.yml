@@ -61,6 +61,17 @@ services:
     networks:
       - learnflow-network
 
+  # SSL Certificate Service (Certbot)
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email ${CERTBOT_EMAIL} -d frontend.intelskill.in -d backend.intelskill.in --agree-tos --no-eff-email
+    networks:
+      - learnflow-network
+
 volumes:
   mysql_data:
 
