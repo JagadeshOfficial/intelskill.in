@@ -3,19 +3,21 @@ version: '3.8'
 services:
   # Frontend Service (Next.js)
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # Use HTTPS URL for the browser to avoid Mixed Content errors
-        NEXT_PUBLIC_API_URL: https://backend.intelskill.in
+    # Use the pre-built image from Docker Hub
+    image: jagadeshvana/learnflow-frontend
+    # Build context commented out as we are using the image
+    # build:
+    #   context: ./frontend
+    #   dockerfile: Dockerfile
+    #   args:
+    #     NEXT_PUBLIC_API_URL: https://backend.intelskill.in
     container_name: learnflow-frontend
     restart: always
     ports:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:8081
-      # Update runtime env var as well
+      # Runtime variable (though it's baked in, good for reference)
       - NEXT_PUBLIC_API_URL=https://backend.intelskill.in
     depends_on:
       - backend
@@ -24,9 +26,11 @@ services:
 
   # Backend Service
   backend:
-    build:
-      context: ./backend/auth-service
-      dockerfile: Dockerfile
+    # Use the pre-built image from Docker Hub
+    image: jagadeshvana/learnflow-backend
+    # build:
+    #   context: ./backend/auth-service
+    #   dockerfile: Dockerfile
     container_name: learnflow-backend
     restart: always
     ports:
@@ -34,7 +38,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/auth_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Sivani@123
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
     depends_on:
@@ -51,12 +55,12 @@ services:
     ports:
       - "3307:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=Sivani@123
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=auth_db
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-pSivani@123"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
       timeout: 20s
       retries: 10
     networks:
@@ -70,6 +74,21 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/www/certbot:/var/www/certbot
     command: certonly --webroot -w /var/www/certbot --force-renewal --email ${CERTBOT_EMAIL} -d ${CERTBOT_DOMAIN1} -d ${CERTBOT_DOMAIN2} --agree-tos --no-eff-email
+    networks:
+      - learnflow-network
+
+  # Watchtower Service (Auto-Update)
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - REPO_USER=${DOCKER_HUB_USERNAME}
+      - REPO_PASS=${DOCKER_HUB_ACCESS_TOKEN}
+    # Checks for updates every 300 seconds (5 minutes)
+    command: --interval 300
     networks:
       - learnflow-network
 
