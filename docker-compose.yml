@@ -5,12 +5,6 @@ services:
   frontend:
     # Use the pre-built image from Docker Hub
     image: jagadeshvana/learnflow-frontend
-    # Build context commented out as we are using the image
-    # build:
-    #   context: ./frontend
-    #   dockerfile: Dockerfile
-    #   args:
-    #     NEXT_PUBLIC_API_URL: https://backend.intelskill.in
     container_name: learnflow-frontend
     restart: always
     ports:
@@ -28,9 +22,6 @@ services:
   backend:
     # Use the pre-built image from Docker Hub
     image: jagadeshvana/learnflow-backend
-    # build:
-    #   context: ./backend/auth-service
-    #   dockerfile: Dockerfile
     container_name: learnflow-backend
     restart: always
     ports:
@@ -84,6 +75,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      # Force API version to match host requirements
+      - DOCKER_API_VERSION=1.44
       - WATCHTOWER_CLEANUP=true
       - REPO_USER=${DOCKER_HUB_USERNAME}
       - REPO_PASS=${DOCKER_HUB_ACCESS_TOKEN}
