@@ -3,16 +3,25 @@ version: '3.8'
 services:
   # Frontend Service (Next.js)
   frontend:
-    # Use the pre-built image from Docker Hub
-    image: jagadeshvana/learnflow-frontend
+    # Switch back to local build for debugging
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        NEXT_PUBLIC_API_URL: https://backend.intelskill.in
+    command: npm run dev
     container_name: learnflow-frontend
     restart: always
     ports:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:8081
-      # Runtime variable (though it's baked in, good for reference)
       - NEXT_PUBLIC_API_URL=https://backend.intelskill.in
+    # Mount source code for live debugging
+    volumes:
+       - ./frontend:/app
+       - /app/node_modules
     depends_on:
       - backend
     networks:
@@ -20,7 +29,8 @@ services:
 
   # Backend Service
   backend:
-    # Use the pre-built image from Docker Hub
+    # Keep backend as is (Docker Hub image is fine, or local build if preferred)
+    # Using Docker Hub image for stability as it works
     image: jagadeshvana/learnflow-backend
     container_name: learnflow-backend
     restart: always
