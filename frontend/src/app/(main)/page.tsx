@@ -200,8 +200,8 @@ export default function Home() {
                       <Users className="h-4 w-4 text-blue-500" />
                       <span>1.2k Enrolled</span>
                     </div>
-                    <Button size="sm" className="rounded-full bg-slate-900 text-white hover:bg-blue-600 transition-colors px-4">
-                      Details
+                    <Button size="sm" className="rounded-full bg-slate-900 text-white hover:bg-blue-600 transition-colors px-4" asChild>
+                      <Link href={`/courses/${course.id}`}>Details</Link>
                     </Button>
                   </div>
                 </div>
