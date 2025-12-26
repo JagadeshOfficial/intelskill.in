@@ -15,12 +15,16 @@ services:
     environment:
       - BACKEND_URL=http://backend:8081
       - NEXT_PUBLIC_API_URL=http://68.178.160.230:8081
+      # Enable verbose logging
+      - NODE_ENV=development
+    # Force dev mode to see the actual error
+    command: npm run dev
     depends_on:
       - backend
     networks:
       - learnflow-network
 
-  # Backend Service (Spring Boot)
+  # Backend Service
   backend:
     build:
       context: ./backend/auth-service
@@ -30,7 +34,6 @@ services:
     ports:
       - "8081:8081"
     environment:
-      # Using 'mysql' hostname (service name) and updated credentials
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/auth_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Sivani@123
@@ -42,7 +45,7 @@ services:
     networks:
       - learnflow-network
 
-  # Database Service (MySQL)
+  # Database Service
   mysql:
     image: mysql:8.0
     container_name: learnflow-mysql
@@ -61,14 +64,14 @@ services:
     networks:
       - learnflow-network
 
-  # SSL Certificate Service (Certbot)
+  # SSL Certificate Service
   certbot:
     image: certbot/certbot
     container_name: certbot
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/www/certbot:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot --force-renewal --email ${CERTBOT_EMAIL} -d frontend.intelskill.in -d backend.intelskill.in --agree-tos --no-eff-email
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email ${CERTBOT_EMAIL} -d ${CERTBOT_DOMAIN1} -d ${CERTBOT_DOMAIN2} --agree-tos --no-eff-email
     networks:
       - learnflow-network
 
