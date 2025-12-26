@@ -6,6 +6,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: dev
       args:
         NEXT_PUBLIC_API_URL: http://68.178.160.230:8081
     container_name: learnflow-frontend
@@ -15,9 +16,7 @@ services:
     environment:
       - BACKEND_URL=http://backend:8081
       - NEXT_PUBLIC_API_URL=http://68.178.160.230:8081
-      # Enable verbose logging
       - NODE_ENV=development
-    # Force dev mode to see the actual error
     command: npm run dev
     depends_on:
       - backend

@@ -10,6 +10,13 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+# Development image, copy all the files and run next
+FROM base AS dev
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+CMD ["npm", "run", "dev"]
+
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
