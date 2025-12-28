@@ -25,6 +25,7 @@ const navLinks = [
   { href: '/tutor/tests', label: 'Tests', icon: PenSquare },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
   { href: '/tutor/sessions', label: 'Online Sessions', icon: Video },
+  { href: '/forum', label: 'Community Forum', icon: Users },
 ]
 
 import { tutorCourses } from '../content/data'

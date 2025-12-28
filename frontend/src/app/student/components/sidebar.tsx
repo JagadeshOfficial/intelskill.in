@@ -23,6 +23,7 @@ const navLinks = [
   { href: '/student/tests', label: 'Online Tests', icon: PenSquare },
   { href: '/student/compiler', label: 'Practice', icon: Terminal },
   { href: '/student/sessions', label: 'Online Sessions', icon: Video },
+  { href: '/forum', label: 'Community Forum', icon: MessageSquare },
 ]
 
 export function StudentSidebar() {

@@ -11,10 +11,15 @@ services:
     environment:
       - BACKEND_URL=http://backend:8081
       - NEXT_PUBLIC_API_URL=https://backend.intelskill.in
-      # Limit Node.js memory to prevent crashes on small VPS
-      - NODE_OPTIONS="--max-old-space-size=512"
+      # Increase Node.js memory limit to prevent crashes
+      - NODE_OPTIONS="--max-old-space-size=1024"
     depends_on:
       - backend
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - learnflow-network
 
@@ -50,7 +55,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}" ]
       timeout: 20s
       retries: 10
     networks:
@@ -84,6 +89,7 @@ services:
 
 volumes:
   mysql_data:
+
 
 networks:
   learnflow-network:

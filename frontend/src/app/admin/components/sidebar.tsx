@@ -28,6 +28,7 @@ const navLinks = [
   { href: '/admin/tests', label: 'Tests', icon: ClipboardCheck },
   { href: '/admin/tutor-applications', label: 'Tutor Applications', icon: ShieldCheck },
   { href: '/admin/sessions', label: 'Online Sessions', icon: Calendar },
+  { href: '/forum', label: 'Community Forum', icon: MessageSquare },
 ]
 
 export function Sidebar() {
