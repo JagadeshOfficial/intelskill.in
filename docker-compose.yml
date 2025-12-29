@@ -4,7 +4,7 @@ services:
   # Frontend Service (Next.js)
   frontend:
     image: jagadeshvana/learnflow-frontend
-    container_name: learnflow-frontend
+    container_name: intelskill-frontend
     restart: always
     ports:
       - "3000:3000"
@@ -26,7 +26,7 @@ services:
   # Backend Service
   backend:
     image: jagadeshvana/learnflow-backend
-    container_name: learnflow-backend
+    container_name: intelskill-backend
     restart: always
     ports:
       - "8081:8081"
