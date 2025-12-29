@@ -45,7 +45,7 @@ services:
   # Database Service
   mysql:
     image: mysql:8.0
-    container_name: learnflow-mysql
+    container_name: intelskill-mysql
     restart: always
     ports:
       - "3307:3306"
@@ -64,7 +64,7 @@ services:
   # SSL Certificate Service
   certbot:
     image: certbot/certbot
-    container_name: certbot
+    container_name: intelskill-certbot
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/www/certbot:/var/www/certbot
@@ -75,7 +75,7 @@ services:
   # Watchtower Service (Auto-Update)
   watchtower:
     image: containrrr/watchtower
-    container_name: watchtower
+    container_name: intelskill-watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
