@@ -1,0 +1,57 @@
+name: Deploy/Restart Intelskill.in
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME || 'root' }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            echo "Attempting to locate and restart Intelskill.in..."
+            
+            # Common paths based on other projects
+            PATHS=(
+              "/home/intelskill.in/Learn_Flow_Full"
+              "/home/intelskill.in"
+              "/home/ubuntu/Learn_Flow_Full"
+              "/var/www/intelskill.in"
+              "/home/mathisi.in/Learn_Flow_Full" 
+              "/root/Learn_Flow_Full"
+            )
+            
+            FOUND=0
+            
+            for DIR in "${PATHS[@]}"; do
+              if [ -d "$DIR" ] && [ -f "$DIR/docker-compose.yml" ]; then
+                echo "Found project at: $DIR"
+                cd "$DIR"
+                echo "Pulling latest images..."
+                docker compose pull
+                echo "Restarting containers..."
+                docker compose up -d
+                FOUND=1
+                break
+              fi
+            done
+            
+            if [ $FOUND -eq 0 ]; then
+              echo "Project directory not found in common locations."
+              echo "Attempting direct container restart (may not update image config)..."
+              docker restart intelskill-frontend intelskill-backend || echo "Failed to restart containers."
+            else
+              echo "Deployment successful."
+            fi
+            
+            echo "Checking container status..."
+            docker ps | grep intelskill
