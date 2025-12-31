@@ -1,0 +1,44 @@
+name: Diagnose VPS Status
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/diagnose.yml
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Diagnose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME || 'root' }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            echo "==== MEMORY USAGE ===="
+            free -m
+            echo ""
+            
+            echo "==== DISK USAGE ===="
+            df -h
+            echo ""
+            
+            echo "==== DOCKER CONTAINERS ===="
+            docker ps -a
+            echo ""
+            
+            echo "==== FRONTEND LOGS ===="
+            docker logs --tail 100 intelskill-frontend 2>&1 || echo "No logs for frontend"
+            echo ""
+            
+            echo "==== BACKEND LOGS ===="
+            docker logs --tail 100 intelskill-backend 2>&1 || echo "No logs for backend"
+            echo ""
+            
+            echo "==== NGINX LOGS ===="
+            # Adjust path if nginx is containerized or specific log location
+            tail -n 50 /var/log/nginx/error.log 2>/dev/null || echo "Could not read host nginx logs"
+            docker logs --tail 50 nginx-proxy 2>/dev/null || echo "No logs for nginx-proxy container"
