@@ -12,7 +12,7 @@ services:
       - BACKEND_URL=http://backend:8081
       - NEXT_PUBLIC_API_URL=https://backend.intelskill.in
       # Increase Node.js memory limit to prevent crashes
-      - NODE_OPTIONS="--max-old-space-size=1024"
+      - NODE_OPTIONS="--max-old-space-size=512"
     depends_on:
       - backend
     healthcheck:

@@ -1,4 +1,4 @@
-name: Deploy/Restart Intelskill.in
+name: Deploy and Fix VPS
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-and-fix:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VPS via SSH
+      - name: SSH, Optimize, and Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -18,9 +18,27 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
           script: |
-            echo "Attempting to locate and restart Intelskill.in..."
+            echo "Starting Deployment and Optimization..."
             
-            # Common paths based on other projects
+            # 1. SWAP SPACE CHECK & CREATION
+            if [ $(free -m | grep Swap | awk '{print $2}') -eq 0 ]; then
+                echo "No swap detected. Creating 2GB swap file..."
+                sudo fallocate -l 2G /swapfile
+                sudo chmod 600 /swapfile
+                sudo mkswap /swapfile
+                sudo swapon /swapfile
+                echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+                echo "Swap created successfully."
+            else
+                echo "Swap space already exists."
+                free -m
+            fi
+
+            # 2. DISK CLEANUP
+            echo "Cleaning up unused Docker resources..."
+            docker system prune -af --volumes
+
+            # 3. LOCATE AND DEPLOY PROJECT
             PATHS=(
               "/home/intelskill.in/Learn_Flow_Full"
               "/home/intelskill.in"
@@ -36,22 +54,26 @@ jobs:
               if [ -d "$DIR" ] && [ -f "$DIR/docker-compose.yml" ]; then
                 echo "Found project at: $DIR"
                 cd "$DIR"
+                
+                # Check for updates and restart
                 echo "Pulling latest images..."
                 docker compose pull
-                echo "Restarting containers..."
-                docker compose up -d
+                
+                echo "Restarting containers with update..."
+                docker compose up -d --remove-orphans
+                
                 FOUND=1
                 break
               fi
             done
             
             if [ $FOUND -eq 0 ]; then
-              echo "Project directory not found in common locations."
-              echo "Attempting direct container restart (may not update image config)..."
-              docker restart intelskill-frontend intelskill-backend || echo "Failed to restart containers."
+              echo "ERROR: Project directory not found in common locations."
+              exit 1
             else
               echo "Deployment successful."
             fi
             
+            # 4. FINAL STATUS CHECK
             echo "Checking container status..."
             docker ps | grep intelskill
