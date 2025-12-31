@@ -1,4 +1,4 @@
-name: Deploy and Fix VPS
+name: Deploy Intelskill.in
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-and-fix:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH, Optimize, and Deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -18,62 +18,43 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
           script: |
-            echo "Starting Deployment and Optimization..."
+            echo "Starting Deployment..."
             
-            # 1. SWAP SPACE CHECK & CREATION
-            if [ $(free -m | grep Swap | awk '{print $2}') -eq 0 ]; then
-                echo "No swap detected. Creating 2GB swap file..."
-                sudo fallocate -l 2G /swapfile
-                sudo chmod 600 /swapfile
-                sudo mkswap /swapfile
-                sudo swapon /swapfile
-                echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-                echo "Swap created successfully."
-            else
-                echo "Swap space already exists."
-                free -m
-            fi
-
-            # 2. DISK CLEANUP
-            echo "Cleaning up unused Docker resources..."
-            docker system prune -af --volumes
-
-            # 3. LOCATE AND DEPLOY PROJECT
+            # Navigate to project directory
+            # Try specific known paths
             PATHS=(
               "/home/intelskill.in/Learn_Flow_Full"
               "/home/intelskill.in"
-              "/home/ubuntu/Learn_Flow_Full"
+              "/home/mathisi.in/Learn_Flow_Full" # In case it's here
               "/var/www/intelskill.in"
-              "/home/mathisi.in/Learn_Flow_Full" 
-              "/root/Learn_Flow_Full"
+              "/home/ubuntu/Learn_Flow_Full"
             )
             
-            FOUND=0
-            
+            TARGET_DIR=""
             for DIR in "${PATHS[@]}"; do
               if [ -d "$DIR" ] && [ -f "$DIR/docker-compose.yml" ]; then
-                echo "Found project at: $DIR"
-                cd "$DIR"
-                
-                # Check for updates and restart
-                echo "Pulling latest images..."
-                docker compose pull
-                
-                echo "Restarting containers with update..."
-                docker compose up -d --remove-orphans
-                
-                FOUND=1
+                TARGET_DIR="$DIR"
                 break
               fi
             done
             
-            if [ $FOUND -eq 0 ]; then
-              echo "ERROR: Project directory not found in common locations."
+            if [ -z "$TARGET_DIR" ]; then
+              echo "Error: Could not find project directory containing docker-compose.yml"
+              echo "Checked: ${PATHS[*]}"
+              # Fallback: Just try to restart valid containers if they exist
+              docker restart intelskill-frontend intelskill-backend || true
               exit 1
-            else
-              echo "Deployment successful."
             fi
             
-            # 4. FINAL STATUS CHECK
-            echo "Checking container status..."
+            echo "Deploying from: $TARGET_DIR"
+            cd "$TARGET_DIR"
+            
+            # Cleanup space
+            docker system prune -f
+            
+            # Update and Restart
+            docker compose pull
+            docker compose up -d --remove-orphans
+            
+            echo "Deployment finished. Checking status:"
             docker ps | grep intelskill
